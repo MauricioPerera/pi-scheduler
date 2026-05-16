@@ -3,12 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "description": "Sistema de scheduling persistente para agentes de IA en el ecosistema pi",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "build": "npm run build --workspaces",
     "check": "npm run check --workspaces",
     "test": "npm run test --workspaces",
     "clean": "npm run clean --workspaces"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@sinclair/typebox": "^0.34.49"
+  }
 }

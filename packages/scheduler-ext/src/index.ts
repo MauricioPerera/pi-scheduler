@@ -25,3 +25,7 @@ export {
 } from './tools.js';
 export { schedulerCommandHandler } from './commands.js';
 export { loadSkillTemplates, parsedTemplateToCoreTemplate } from './skill-loader.js';
+
+import { schedulerExtension as _schedulerExtension } from './extension.js';
+
+export default _schedulerExtension;

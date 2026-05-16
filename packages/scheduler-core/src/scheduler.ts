@@ -68,7 +68,9 @@ export class Scheduler {
     if (options.webhookUrl) {
       this.config.webhookUrl = options.webhookUrl;
     }
-
+    if (options.tickIntervalMs !== undefined) {
+      this.config.tickIntervalMs = options.tickIntervalMs;
+    }
     // Load custom templates
     const customTemplates = this.loadCustomTemplates();
     this.templates = [...BUILTIN_TEMPLATES];
@@ -413,10 +415,10 @@ export class Scheduler {
       this.listeners.set(event, new Set());
     }
     const set = this.listeners.get(event)!;
-    // @ts-expect-error handler type narrowing
-    set.add(handler);
+    (set as Set<any>).add(handler); // @ts-ignore
+    
     return () => {
-      set.delete(handler);
+      (set as Set<any>).delete(handler);
     };
   }
 

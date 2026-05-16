@@ -12,25 +12,25 @@ export function schedulerCommandHandler(getScheduler: () => Scheduler) {
 
     switch (subcommand) {
       case 'list':
-        await handleList(scheduler, ctx);
+        await handleList(getScheduler(), ctx);
         break;
       case 'tasks':
-        await handleTasks(scheduler, ctx);
+        await handleTasks(getScheduler(), ctx);
         break;
       case 'delete':
-        await handleDelete(scheduler, ctx, parts[1]);
+        await handleDelete(getScheduler(), ctx, parts[1]);
         break;
       case 'logs':
-        await handleLogs(scheduler, ctx, parts[1], parts[2] ? parseInt(parts[2], 10) : undefined);
+        await handleLogs(getScheduler(), ctx, parts[1], parts[2] ? parseInt(parts[2], 10) : undefined);
         break;
       case 'templates':
-        await handleTemplates(scheduler, ctx);
+        await handleTemplates(getScheduler(), ctx);
         break;
       case 'notifications':
-        await handleNotifications(scheduler, ctx);
+        await handleNotifications(getScheduler(), ctx);
         break;
       case 'ack':
-        await handleAck(scheduler, ctx);
+        await handleAck(getScheduler(), ctx);
         break;
       default:
         await ctx.ui?.notify?.(`Unknown command: /scheduler ${subcommand}`, 'warning');
@@ -39,7 +39,7 @@ export function schedulerCommandHandler(getScheduler: () => Scheduler) {
 }
 
 async function handleList(scheduler: Scheduler, ctx: ExtensionCommandContext): Promise<void> {
-  const automations = getScheduler().listAutomations();
+  const automations = scheduler.listAutomations();
   if (automations.length === 0) {
     await ctx.ui?.notify?.('No automations scheduled', 'info');
     return;
@@ -60,7 +60,7 @@ async function handleList(scheduler: Scheduler, ctx: ExtensionCommandContext): P
 }
 
 async function handleTasks(scheduler: Scheduler, ctx: ExtensionCommandContext): Promise<void> {
-  const tasks = getScheduler().listTasks().reverse();
+  const tasks = scheduler.listTasks().reverse();
   if (tasks.length === 0) {
     await ctx.ui?.notify?.('No one-shot tasks', 'info');
     return;
@@ -91,7 +91,7 @@ async function handleDelete(scheduler: Scheduler, ctx: ExtensionCommandContext, 
     return;
   }
 
-  const deleted = getScheduler().deleteAutomation(id) || getScheduler().deleteTask(id);
+  const deleted = scheduler.deleteAutomation(id) || scheduler.deleteTask(id);
   await ctx.ui?.notify?.(deleted ? `Deleted ${id}` : `Not found: ${id}`, deleted ? 'info' : 'warning');
 }
 
@@ -106,7 +106,7 @@ async function handleLogs(
     return;
   }
 
-  const logs = getScheduler().getAutomationLogs(id, limit ?? 10);
+  const logs = scheduler.getAutomationLogs(id, limit ?? 10);
   if (logs.length === 0) {
     await ctx.ui?.notify?.('No logs found', 'info');
     return;
@@ -124,13 +124,13 @@ async function handleLogs(
 }
 
 async function handleTemplates(scheduler: Scheduler, ctx: ExtensionCommandContext): Promise<void> {
-  const templates = getScheduler().listTemplates();
+  const templates = scheduler.listTemplates();
   const lines = templates.map((t) => `${t.id}: ${t.description} (default: ${t.defaultInterval}min)`);
   await ctx.ui?.notify?.(lines.join('\n') || 'No templates', 'info');
 }
 
 async function handleNotifications(scheduler: Scheduler, ctx: ExtensionCommandContext): Promise<void> {
-  const summary = getScheduler().getPendingSummary();
+  const summary = scheduler.getPendingSummary();
   if (summary.count === 0) {
     await ctx.ui?.notify?.('No pending notifications', 'info');
     return;
@@ -144,7 +144,7 @@ async function handleNotifications(scheduler: Scheduler, ctx: ExtensionCommandCo
 }
 
 async function handleAck(scheduler: Scheduler, ctx: ExtensionCommandContext): Promise<void> {
-  getScheduler().ackNotifications(Date.now());
+  scheduler.ackNotifications(Date.now());
   await ctx.ui?.notify?.('All notifications acknowledged', 'info');
 }
 

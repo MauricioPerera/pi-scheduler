@@ -1,4 +1,4 @@
-import { Type, type Static } from 'typebox';
+import { Type, type Static } from '@sinclair/typebox';
 import type {
   Scheduler,
   CreateAutomationOptions,
@@ -38,7 +38,7 @@ export function createAutomationTool(getScheduler: () => Scheduler) {
     label: 'Create recurring automation',
     description: 'Create a recurring automation that runs a command or script on a schedule.',
     parameters: CreateAutomationParams,
-    async execute(toolCallId, params) {
+    async execute(toolCallId: string, params: any) {
       const options: CreateAutomationOptions = {
         name: params.name,
         intervalMinutes: params.intervalMinutes,
@@ -70,7 +70,7 @@ export function listAutomationsTool(getScheduler: () => Scheduler) {
     label: 'List automations',
     description: 'List all recurring automations with last log and next run time.',
     parameters: ListAutomationsParams,
-    async execute(toolCallId) {
+    async execute(_toolCallId: string) {
       const list = getScheduler().listAutomations().map((a) => ({
         id: a.id,
         name: a.name,
@@ -100,7 +100,7 @@ export function deleteAutomationTool(getScheduler: () => Scheduler) {
     label: 'Delete automation',
     description: 'Remove an automation and its script file.',
     parameters: DeleteAutomationParams,
-    async execute(toolCallId, params) {
+    async execute(toolCallId: string, params: any) {
       const deleted = getScheduler().deleteAutomation(params.id);
       return {
         content: [{ type: 'text', text: deleted ? 'Deleted' : 'Not found' }],
@@ -125,7 +125,7 @@ export function getAutomationLogsTool(getScheduler: () => Scheduler) {
     label: 'Get automation logs',
     description: 'Get recent run logs for an automation.',
     parameters: GetAutomationLogsParams,
-    async execute(toolCallId, params) {
+    async execute(toolCallId: string, params: any) {
       const logs = getScheduler().getAutomationLogs(params.id, params.limit);
       return {
         content: [{ type: 'text', text: JSON.stringify(logs, null, 2) }],
@@ -147,7 +147,7 @@ export function listTemplatesTool(getScheduler: () => Scheduler) {
     label: 'List templates',
     description: 'List available automation templates that can be instantiated.',
     parameters: ListTemplatesParams,
-    async execute(toolCallId) {
+    async execute(_toolCallId: string) {
       const items = getScheduler().listTemplates();
       return {
         content: [{ type: 'text', text: JSON.stringify(items, null, 2) }],
@@ -175,7 +175,7 @@ export function instantiateTemplateTool(getScheduler: () => Scheduler) {
     label: 'Instantiate template',
     description: 'Create an automation from a pre-defined template. Override interval, cwd, or pass params for interpolation.',
     parameters: InstantiateTemplateParams,
-    async execute(toolCallId, params) {
+    async execute(toolCallId: string, params: any) {
       let parsedParams: Record<string, string> = {};
       if (params.params) {
         try {
@@ -221,7 +221,7 @@ export function runTaskTool(getScheduler: () => Scheduler) {
     label: 'Run one-shot task',
     description: 'Run a one-shot background task and return a taskId immediately. Check status later with get_task_status.',
     parameters: RunTaskParams,
-    async execute(toolCallId, params) {
+    async execute(toolCallId: string, params: any) {
       const options: RunTaskOptions = {
         name: params.name,
         cwd: params.cwd,
@@ -253,7 +253,7 @@ export function getTaskStatusTool(getScheduler: () => Scheduler) {
     label: 'Get task status',
     description: 'Get the current status and output of a one-shot task.',
     parameters: GetTaskStatusParams,
-    async execute(toolCallId, params) {
+    async execute(toolCallId: string, params: any) {
       const task = getScheduler().getTaskStatus(params.id);
       if (!task) {
         return {
@@ -281,7 +281,7 @@ export function listTasksTool(getScheduler: () => Scheduler) {
     label: 'List tasks',
     description: 'List all one-shot tasks ordered by most recent.',
     parameters: ListTasksParams,
-    async execute(toolCallId) {
+    async execute(_toolCallId: string) {
       const list = getScheduler().listTasks().reverse().map((t) => ({
         id: t.id,
         name: t.name,
@@ -312,7 +312,7 @@ export function deleteTaskTool(getScheduler: () => Scheduler) {
     label: 'Delete task',
     description: 'Remove a one-shot task and its script file.',
     parameters: DeleteTaskParams,
-    async execute(toolCallId, params) {
+    async execute(toolCallId: string, params: any) {
       const deleted = getScheduler().deleteTask(params.id);
       return {
         content: [{ type: 'text', text: deleted ? 'Deleted' : 'Not found' }],
@@ -334,7 +334,7 @@ export function checkNotificationsTool(getScheduler: () => Scheduler) {
     label: 'Check notifications',
     description: 'Check pending scheduler notifications since last ack.',
     parameters: CheckNotificationsParams,
-    async execute(toolCallId) {
+    async execute(_toolCallId: string) {
       const notifications = getScheduler().checkNotifications();
       return {
         content: [{ type: 'text', text: JSON.stringify(notifications, null, 2) }],
@@ -358,7 +358,7 @@ export function ackNotificationsTool(getScheduler: () => Scheduler) {
     label: 'Ack notifications',
     description: 'Mark all scheduler notifications up to a timestamp as read.',
     parameters: AckNotificationsParams,
-    async execute(toolCallId, params) {
+    async execute(toolCallId: string, params: any) {
       getScheduler().ackNotifications(params.timestamp);
       return {
         content: [{ type: 'text', text: 'Notifications acknowledged' }],
@@ -380,7 +380,7 @@ export function getPendingSummaryTool(getScheduler: () => Scheduler) {
     label: 'Pending summary',
     description: 'Summary of pending scheduler notifications grouped by automation.',
     parameters: GetPendingSummaryParams,
-    async execute(toolCallId) {
+    async execute(_toolCallId: string) {
       const summary = getScheduler().getPendingSummary();
       return {
         content: [{ type: 'text', text: `${summary.count} pending. ${JSON.stringify(summary.byAutomation, null, 2)}` }],
@@ -404,7 +404,7 @@ export function setWebhookTool(getScheduler: () => Scheduler) {
     label: 'Set webhook',
     description: 'Set a webhook URL for scheduler notifications.',
     parameters: SetWebhookParams,
-    async execute(toolCallId, params) {
+    async execute(toolCallId: string, params: any) {
       getScheduler().setWebhookUrl(params.url);
       return {
         content: [{ type: 'text', text: `Webhook set to ${params.url}` }],
