@@ -138,7 +138,7 @@ export function validateTask(args: TaskArgs, extraDirs?: string[]): ValidationRe
 // Interpolation Hardening
 // ---------------------------------------------------------------------------
 
-const SAFE_INTERPOLATED = /^[a-zA-Z0-9_\\\\/: .~]+$/;
+const SAFE_INTERPOLATED = /^[a-zA-Z0-9_\\/: .~-]+$/;
 
 export function validateInterpolationValue(value: unknown): ValidationResult {
   const str = String(value);
@@ -147,5 +147,3 @@ export function validateInterpolationValue(value: unknown): ValidationResult {
   }
   return { ok: true };
 }
-
-

@@ -15,7 +15,7 @@ describe('Scheduler', () => {
 
   beforeEach(() => {
     dataDir = createTempDir();
-    scheduler = Scheduler.create({ dataDir, tickIntervalMs: 1000 });
+    scheduler = Scheduler.create({ dataDir, tickIntervalMs: 1000, allowedDirs: [tmpdir()] });
   });
 
   afterEach(() => {
@@ -144,3 +144,4 @@ describe('Scheduler', () => {
     expect(afterAck).toHaveLength(0);
   });
 });
+
