@@ -11,6 +11,7 @@ import type {
   ExecutionLog,
   Notification,
   Template,
+  TemplateSummary,
   InstantiateTemplateOptions,
   SchedulerEventMap,
   SchedulerEventName,
@@ -48,6 +49,7 @@ export class Scheduler {
   private readonly allowedDirs: string[];
   private readonly listeners = new Map<SchedulerEventName, Set<SchedulerEventHandler<SchedulerEventName>>>();
   private running = false;
+  private runningAutomations = new Set<string>();
 
   static create(options?: SchedulerOptions): Scheduler {
     return new Scheduler(options);
@@ -112,10 +114,13 @@ export class Scheduler {
   private tick(): void {
     const now = Date.now();
     for (const a of this.automations.values()) {
-      if (now >= a.nextRun) {
+      if (now >= a.nextRun && !this.runningAutomations.has(a.id)) {
+        this.runningAutomations.add(a.id);
         a.nextRun = now + a.intervalMinutes * 60 * 1000;
         saveAutomations(this.paths.automationsFile, this.automations);
-        this.runAutomation(a).catch((err) => {
+        this.runAutomation(a).finally(() => {
+          this.runningAutomations.delete(a.id);
+        }).catch((err) => {
           this.emit('error', { message: String(err), automationId: a.id });
         });
       }
@@ -347,7 +352,7 @@ export class Scheduler {
   // Templates
   // ---------------------------------------------------------------------------
 
-  listTemplates(): Template[] {
+  listTemplates(): TemplateSummary[] {
     return this.templates.map((t) => ({
       id: t.id,
       name: t.name,
@@ -356,7 +361,7 @@ export class Scheduler {
       scriptType: t.scriptType,
       hasCommand: !!t.command,
       hasScript: !!t.script,
-    })) as unknown as Template[];
+    })) ;
   }
 
   instantiateTemplate(templateId: string, options: InstantiateTemplateOptions = {}): Automation {

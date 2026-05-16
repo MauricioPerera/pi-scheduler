@@ -6,17 +6,13 @@ import type { TaskArgs, ValidationResult } from './types.js';
 // Command Blocklist
 // ---------------------------------------------------------------------------
 
-const COMMAND_BLOCKLIST = [
+const COMMAND_BLOCKLIST_SUBSTRINGS = [
   'rm -rf /',
   'rm -rf /*',
   'rm -rf ~',
   'del /f /s /q',
   'rmdir /s /q',
   'format ',
-  'diskpart',
-  'mkfs',
-  'curl ',
-  'wget ',
   '| sh',
   '| bash',
   '| cmd',
@@ -26,12 +22,25 @@ const COMMAND_BLOCKLIST = [
   'reg delete',
 ];
 
+const COMMAND_BLOCKLIST_WORDS = [
+  'diskpart',
+  'mkfs',
+  'curl',
+  'wget',
+];
+
 export function validateCommand(command: string | undefined): ValidationResult {
   if (!command) return { ok: true };
   const lower = command.toLowerCase();
-  for (const pattern of COMMAND_BLOCKLIST) {
+  for (const pattern of COMMAND_BLOCKLIST_SUBSTRINGS) {
     if (lower.includes(pattern)) {
       return { ok: false, reason: 'Command blocked by security policy: dangerous pattern detected' };
+    }
+  }
+  for (const word of COMMAND_BLOCKLIST_WORDS) {
+    const re = new RegExp('\\\\b' + word + '\\\\b', 'i');
+    if (re.test(lower)) {
+      return { ok: false, reason: 'Command blocked by security policy: forbidden word \"' + word + '\"' };
     }
   }
   return { ok: true };
@@ -41,14 +50,12 @@ export function validateCommand(command: string | undefined): ValidationResult {
 // Script Blocklist
 // ---------------------------------------------------------------------------
 
-const SCRIPT_BLOCKLIST = [
+const SCRIPT_BLOCKLIST_SUBSTRINGS = [
   'rm -rf /',
   'rm -rf /*',
   'format ',
-  'diskpart',
-  'mkfs',
   'remove-item -recurse -force c:',
-  'remove-item -recurse -force c:\\',
+  'remove-item -recurse -force c:\\\\',
   'format-volume',
   'clear-disk',
   'remove-computer',
@@ -58,20 +65,31 @@ const SCRIPT_BLOCKLIST = [
   'shutil.rmtree',
   'subprocess.call',
   'dd if=/dev/zero',
-  'curl ',
-  'wget ',
   '| sh',
   '| bash',
   '| cmd',
   '| powershell',
 ];
 
+const SCRIPT_BLOCKLIST_WORDS = [
+  'diskpart',
+  'mkfs',
+  'curl',
+  'wget',
+];
+
 export function validateScript(script: string | undefined): ValidationResult {
   if (!script) return { ok: true };
   const lower = script.toLowerCase();
-  for (const pattern of SCRIPT_BLOCKLIST) {
+  for (const pattern of SCRIPT_BLOCKLIST_SUBSTRINGS) {
     if (lower.includes(pattern)) {
       return { ok: false, reason: 'Script blocked by security policy: dangerous pattern detected' };
+    }
+  }
+  for (const word of SCRIPT_BLOCKLIST_WORDS) {
+    const re = new RegExp('\\\\b' + word + '\\\\b', 'i');
+    if (re.test(lower)) {
+      return { ok: false, reason: 'Script blocked by security policy: forbidden word \"' + word + '\"' };
     }
   }
   return { ok: true };
@@ -138,7 +156,7 @@ export function validateTask(args: TaskArgs, extraDirs?: string[]): ValidationRe
 // Interpolation Hardening
 // ---------------------------------------------------------------------------
 
-const SAFE_INTERPOLATED = /^[a-zA-Z0-9_\\/: .~-]+$/;
+const SAFE_INTERPOLATED = /^[a-zA-Z0-9_\\\\/: .~-]+$/;
 
 export function validateInterpolationValue(value: unknown): ValidationResult {
   const str = String(value);

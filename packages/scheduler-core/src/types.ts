@@ -120,6 +120,16 @@ export interface Template {
   requiredParams: string[];
 }
 
+export interface TemplateSummary {
+  id: string;
+  name: string;
+  description: string;
+  defaultInterval: number;
+  scriptType: ScriptType | null;
+  hasCommand: boolean;
+  hasScript: boolean;
+}
+
 export interface InstantiateTemplateOptions {
   name?: string;
   intervalMinutes?: number;

@@ -16,6 +16,7 @@ export type {
   Notification,
   TaskResult,
   Template,
+  TemplateSummary,
   InstantiateTemplateOptions,
   InterpolationResult,
   ValidationResult,
