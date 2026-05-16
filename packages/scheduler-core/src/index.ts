@@ -1,24 +1,42 @@
 /**
  * pi-scheduler-core
  * Motor de scheduling persistente para agentes de IA.
- *
- * Zero dependencies (excepto Node.js built-ins).
+ * Zero dependencies (Node.js built-ins only).
  */
 
-export interface SchedulerOptions {
-  dataDir?: string;
-  tickIntervalMs?: number;
-  webhookUrl?: string;
-  allowedDirs?: string[];
-}
-
-// TODO: Implementar Scheduler class, store, security, templates, notifications
-export class Scheduler {
-  static create(options?: SchedulerOptions): Scheduler {
-    return new Scheduler(options);
-  }
-
-  private constructor(options?: SchedulerOptions) {
-    // Placeholder
-  }
-}
+export { Scheduler } from './scheduler.js';
+export type {
+  SchedulerOptions,
+  Logger,
+  Automation,
+  CreateAutomationOptions,
+  Task,
+  RunTaskOptions,
+  ExecutionLog,
+  Notification,
+  TaskResult,
+  Template,
+  InstantiateTemplateOptions,
+  InterpolationResult,
+  ValidationResult,
+  TaskArgs,
+  SchedulerEventMap,
+  SchedulerEventName,
+  SchedulerEventHandler,
+} from './types.js';
+export { validateTask, validateCommand, validateScript, validateCwd, validateInterpolationValue } from './security.js';
+export { BUILTIN_TEMPLATES, interpolateTemplate, instantiateTemplateOptions } from './templates.js';
+export { generateId, atomicWrite, safeWrite, resolveDataDir, noopLogger } from './utils.js';
+export {
+  getStorePaths, ensureStoreDirs,
+  loadAutomations, loadTasks, loadConfig,
+  saveAutomations, saveTasks, saveConfig,
+  getScriptExt, getScriptRunner, resolveCommand, deleteScriptFile,
+} from './store.js';
+export {
+  loadNotificationsState, saveNotificationsState,
+  appendNotification, readNotifications,
+  getPendingCount, getPendingSummary,
+  sendHttpNotification,
+} from './notifications.js';
+export { executeCommand } from './executor.js';
