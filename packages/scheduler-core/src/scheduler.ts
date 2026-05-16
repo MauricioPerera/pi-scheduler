@@ -19,7 +19,7 @@ import type {
   ValidationResult,
   TaskArgs,
 } from './types.js';
-import { generateId, noopLogger, resolveDataDir } from './utils.js';
+import { generateId, noopLogger } from './utils.js';
 import { validateTask } from './security.js';
 import { BUILTIN_TEMPLATES, instantiateTemplateOptions } from './templates.js';
 import {

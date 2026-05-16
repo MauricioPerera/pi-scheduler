@@ -8,13 +8,15 @@ Un agente de IA no deberia solo responder preguntas; deberia poder **asumir resp
 
 ## Estructura
 
-`
+```
 pi-scheduler/
 ├── packages/
 │   ├── scheduler-core/     # Motor de scheduling puro (zero deps opcionales)
-│   └── scheduler-ext/      # Extension pi-coding-agent (TUI, comandos slash, eventos)
-└── specs/                  # Especificaciones tecnicas
-`
+│   ├── scheduler-ext/      # Extension pi-coding-agent (TUI, comandos slash, eventos)
+│   └── scheduler-daemon/   # Proceso standalone (daemon companion opcional)
+├── specs/                  # Especificaciones tecnicas
+└── skills/                 # Ejemplo de skill-template
+```
 
 ## Diferencias con local-scheduler-mcp
 
