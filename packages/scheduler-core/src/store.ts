@@ -9,7 +9,7 @@ import { safeWrite, resolveDataDir } from './utils.js';
 // Paths
 // ---------------------------------------------------------------------------
 
-export function getStorePaths(dataDir: string) {
+export function getStorePaths(dataDir?: string) {
   const resolved = resolveDataDir(dataDir);
   return {
     dir: resolved,
@@ -113,3 +113,4 @@ export function deleteScriptFile(id: string, scriptType: string, scriptsDir: str
   const path = join(scriptsDir, id + ext);
   try { unlinkSync(path); } catch {}
 }
+

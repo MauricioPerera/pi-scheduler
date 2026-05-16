@@ -378,7 +378,7 @@ export class Scheduler {
   private loadCustomTemplates(): Template[] {
     if (!_fsExistsSync(this.paths.templatesFile)) return [];
     try {
-      const data = JSON.parse(readFileSync(this.paths.templatesFile, 'utf8'));
+      const data = JSON.parse(_fsReadFileSync(this.paths.templatesFile, 'utf8'));
       if (Array.isArray(data)) return data as Template[];
     } catch {}
     return [];
@@ -432,6 +432,7 @@ export class Scheduler {
     }
   }
 }
+
 
 
 

@@ -11,21 +11,33 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "clean": "shx rm -rf dist",
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch",
     "test": "vitest --run",
+    "test:coverage": "vitest --run --coverage",
     "prepublishOnly": "npm run clean && npm run build"
   },
-  "keywords": ["scheduler", "agent", "automation", "pi", "task-runner"],
+  "keywords": [
+    "scheduler",
+    "agent",
+    "automation",
+    "pi",
+    "task-runner"
+  ],
   "license": "MIT",
-  "engines": { "node": ">=20.0.0" },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "devDependencies": {
-    "@types/node": "^24.3.0",
-    "typescript": "^5.7.3",
-    "vitest": "^3.2.4",
-    "shx": "^0.3.4"
+    "@types/node": "^24.12.4",
+    "shx": "^0.3.4",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   }
 }

@@ -1,0 +1,7 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/scheduler-core" },
+    { "path": "./packages/scheduler-ext" }
+  ]
+}
