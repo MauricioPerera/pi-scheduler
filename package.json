@@ -10,7 +10,8 @@
     "build": "npm run build --workspaces",
     "check": "npm run check --workspaces",
     "test": "npm run test --workspaces",
-    "clean": "npm run clean --workspaces"
+    "clean": "npm run clean --workspaces",
+    "release": "npm run build --workspaces && npm publish --workspace=@earendil-works/pi-scheduler-core && npm publish --workspace=@earendil-works/pi-scheduler-ext && npm publish --workspace=@earendil-works/pi-scheduler-daemon"
   },
   "license": "MIT",
   "devDependencies": {

@@ -6,15 +6,10 @@
   "bin": {
     "pi-scheduler-daemon": "./dist/daemon.js"
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "clean": "shx rm -rf dist",
     "build": "tsc -p tsconfig.build.json",
@@ -24,7 +19,17 @@
   "dependencies": {
     "@earendil-works/pi-scheduler-core": "^0.1.0"
   },
-  "keywords": ["scheduler", "daemon", "agent", "automation"],
+  "keywords": [
+    "scheduler",
+    "daemon",
+    "agent",
+    "automation"
+  ],
   "license": "MIT",
-  "engines": { "node": ">=20.0.0" }
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }
