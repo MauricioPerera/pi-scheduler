@@ -1,0 +1,37 @@
+{
+  "name": "@earendil-works/pi-scheduler-ext",
+  "version": "0.1.0",
+  "description": "Extension pi-coding-agent para pi-scheduler-core",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "clean": "shx rm -rf dist",
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "test": "vitest --run",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-agent-core": "^0.74.0",
+    "@earendil-works/pi-coding-agent": "^0.74.0"
+  },
+  "dependencies": {
+    "@earendil-works/pi-scheduler-core": "^0.1.0"
+  },
+  "license": "MIT",
+  "engines": { "node": ">=20.0.0" },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.2.4",
+    "shx": "^0.3.4"
+  }
+}
