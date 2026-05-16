@@ -22,7 +22,7 @@ export const BUILTIN_TEMPLATES: Template[] = [
     description: 'Check available disk space every N minutes.',
     defaultInterval: 5,
     scriptType: null,
-    command: "Get-PSDrive C | Select-Object Used,Free",
+    command: "powershell -Command \"Get-PSDrive C | Select-Object Used,Free\"",
     script: null,
     requiredParams: [],
   },
