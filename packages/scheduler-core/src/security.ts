@@ -38,9 +38,9 @@ export function validateCommand(command: string | undefined): ValidationResult {
     }
   }
   for (const word of COMMAND_BLOCKLIST_WORDS) {
-    const re = new RegExp('\\\\b' + word + '\\\\b', 'i');
+    const re = new RegExp('\\b' + word + '\\b', 'i');
     if (re.test(lower)) {
-      return { ok: false, reason: 'Command blocked by security policy: forbidden word \"' + word + '\"' };
+      return { ok: false, reason: `Command blocked by security policy: forbidden word "${word}"` };
     }
   }
   return { ok: true };
@@ -87,9 +87,9 @@ export function validateScript(script: string | undefined): ValidationResult {
     }
   }
   for (const word of SCRIPT_BLOCKLIST_WORDS) {
-    const re = new RegExp('\\\\b' + word + '\\\\b', 'i');
+    const re = new RegExp('\\b' + word + '\\b', 'i');
     if (re.test(lower)) {
-      return { ok: false, reason: 'Script blocked by security policy: forbidden word \"' + word + '\"' };
+      return { ok: false, reason: `Script blocked by security policy: forbidden word "${word}"` };
     }
   }
   return { ok: true };

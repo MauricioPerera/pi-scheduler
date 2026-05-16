@@ -420,10 +420,9 @@ export class Scheduler {
       this.listeners.set(event, new Set());
     }
     const set = this.listeners.get(event)!;
-    (set as Set<any>).add(handler); // @ts-ignore
-    
+    (set as Set<SchedulerEventHandler<SchedulerEventName>>).add(handler as SchedulerEventHandler<SchedulerEventName>);
     return () => {
-      (set as Set<any>).delete(handler);
+      (set as Set<SchedulerEventHandler<SchedulerEventName>>).delete(handler as SchedulerEventHandler<SchedulerEventName>);
     };
   }
 
