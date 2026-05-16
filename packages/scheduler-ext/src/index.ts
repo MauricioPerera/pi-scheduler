@@ -2,12 +2,26 @@
  * pi-scheduler-ext
  * Extension pi-coding-agent para pi-scheduler-core.
  *
- * Integra tools, comandos slash, eventos y notificaciones
- * con el runtime de pi.
+ * Expone 14 tools, comandos slash, eventos de ciclo de vida,
+ * y notificaciones UI integradas.
  */
 
-// TODO: Implementar ExtensionFactory, tools, commands, skill loader
-export const schedulerExtension = {
-  name: 'pi-scheduler',
-  version: '0.1.0',
-};
+export { schedulerExtension } from './extension.js';
+export {
+  createAutomationTool,
+  listAutomationsTool,
+  deleteAutomationTool,
+  getAutomationLogsTool,
+  listTemplatesTool,
+  instantiateTemplateTool,
+  runTaskTool,
+  getTaskStatusTool,
+  listTasksTool,
+  deleteTaskTool,
+  checkNotificationsTool,
+  ackNotificationsTool,
+  getPendingSummaryTool,
+  setWebhookTool,
+} from './tools.js';
+export { schedulerCommandHandler } from './commands.js';
+export { loadSkillTemplates, parsedTemplateToCoreTemplate } from './skill-loader.js';
