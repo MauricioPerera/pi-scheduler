@@ -1,6 +1,6 @@
 # pi-scheduler-ext
 
-> v0.2.2 — Extension pi-coding-agent para pi-scheduler-core.
+> v0.2.3 — Extension pi-coding-agent para pi-scheduler-core.
 
 ## Install
 
