@@ -1,6 +1,6 @@
 # pi-scheduler-core
 
-> v0.3.2 — Motor de scheduling persistente para agentes de IA. Zero dependencies (solo Node.js built-ins).
+> v0.3.3 — Motor de scheduling persistente para agentes de IA. Zero dependencies (solo Node.js built-ins).
 
 ## Install
 
