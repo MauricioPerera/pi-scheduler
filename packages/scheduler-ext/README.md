@@ -1,11 +1,11 @@
-# @earendil-works/pi-scheduler-ext
+# pi-scheduler-ext
 
-Extension pi-coding-agent para pi-scheduler-core.
+> v0.1.3 — Extension pi-coding-agent para pi-scheduler-core.
 
 ## Install
 
 ```bash
-npm install @earendil-works/pi-scheduler-ext
+npm install pi-scheduler-ext
 ```
 
 Requires peer dependencies:
@@ -17,7 +17,7 @@ Requires peer dependencies:
 In your pi extension entry point:
 
 ```typescript
-import { schedulerExtension } from '@earendil-works/pi-scheduler-ext';
+import { schedulerExtension } from 'pi-scheduler-ext';
 
 export default schedulerExtension;
 ```

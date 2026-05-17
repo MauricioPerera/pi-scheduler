@@ -1,17 +1,17 @@
-# @earendil-works/pi-scheduler-core
+# pi-scheduler-core
 
-Motor de scheduling persistente para agentes de IA. Zero dependencies (solo Node.js built-ins).
+> v0.1.3 — Motor de scheduling persistente para agentes de IA. Zero dependencies (solo Node.js built-ins).
 
 ## Install
 
 ```bash
-npm install @earendil-works/pi-scheduler-core
+npm install pi-scheduler-core
 ```
 
 ## Usage
 
 ```typescript
-import { Scheduler } from '@earendil-works/pi-scheduler-core';
+import { Scheduler } from 'pi-scheduler-core';
 
 const scheduler = Scheduler.create({
   dataDir: '~/.pi/scheduler',
@@ -56,12 +56,18 @@ Five layers of validation:
 
 ## Templates
 
-Built-in: `build-project`, `disk-check`, `git-sync`
+Built-in: `build-project`, `disk-check`, `git-sync`, `npm-test`, `npm-outdated`, `memory-check`, `service-ping`, `git-log`
 
 ```typescript
 const auto = scheduler.instantiateTemplate('build-project', {
   name: 'Build MyProject',
   cwd: 'D:/repos/myproject',
+});
+
+// Template with params
+const ping = scheduler.instantiateTemplate('service-ping', {
+  cwd: 'C:/temp',
+  params: { host: 'localhost', port: '8080' },
 });
 ```
 

@@ -28,6 +28,14 @@ pi-scheduler/
 | Persistencia | Map en memoria + JSON atomico | Igual, pero adaptado a lifecycle de sesion pi |
 | Proceso | Servidor MCP standalone | Subsistema del runtime pi (o daemon companion opcional) |
 
+## Paquetes
+
+| Paquete | Version | Descripcion |
+|---|---|---|
+| [`pi-scheduler-core`](packages/scheduler-core) | 0.1.3 | Motor puro, zero dependencies |
+| [`pi-scheduler-ext`](packages/scheduler-ext) | 0.1.3 | Extension pi-coding-agent |
+| [`pi-scheduler-daemon`](packages/scheduler-daemon) | 0.1.3 | Daemon standalone |
+
 ## Licencia
 
 MIT

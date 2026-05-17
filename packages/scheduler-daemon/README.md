@@ -1,11 +1,11 @@
-# @earendil-works/pi-scheduler-daemon
+# pi-scheduler-daemon
 
-Standalone daemon for pi-scheduler. Runs automations even when pi is closed.
+> v0.1.3 — Standalone daemon for pi-scheduler. Runs automations even when pi is closed.
 
 ## Install
 
 ```bash
-npm install -g @earendil-works/pi-scheduler-daemon
+npm install -g pi-scheduler-daemon
 ```
 
 ## Usage
