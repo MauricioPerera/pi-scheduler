@@ -67,6 +67,21 @@ export class Scheduler {
     this.config = loadConfig(this.paths.configFile);
     this.lastAck = loadNotificationsState(this.paths.lastAckFile).lastAck;
 
+    // Recover tasks that were running when the process last died
+    let hadOrphanedTasks = false;
+    for (const task of this.tasks.values()) {
+      if (task.status === 'running') {
+        task.status = 'failed';
+        task.completedAt = new Date().toISOString();
+        task.exitCode = -1;
+        task.stderr = 'Task interrupted: scheduler restarted before task completed.';
+        hadOrphanedTasks = true;
+      }
+    }
+    if (hadOrphanedTasks) {
+      saveTasks(this.paths.tasksFile, this.tasks);
+    }
+
     if (options.webhookUrl) {
       this.config.webhookUrl = options.webhookUrl;
     }

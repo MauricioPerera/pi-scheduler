@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Scheduler } from '../src/scheduler.js';
-import { rmSync, existsSync, mkdirSync } from 'node:fs';
+import { rmSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -131,6 +131,37 @@ describe('Scheduler', () => {
         cwd: tmpdir(),
       });
       expect(scheduler.getAutomationLogs(auto.id)).toEqual([]);
+    });
+  });
+
+  describe('task recovery on restart', () => {
+    it('marks running tasks as failed when scheduler restarts', () => {
+      const task = scheduler.runTask({
+        name: 'LongTask',
+        command: 'echo hi',
+        cwd: tmpdir(),
+        timeoutMs: 60000,
+      });
+      const id = task.id;
+      scheduler.stop();
+
+      // Force the persisted task back to running to simulate a crash
+      const tasksFile = join(dataDir, 'tasks.json');
+      const current = JSON.parse(readFileSync(tasksFile, 'utf8'));
+      for (const t of current) {
+        if (t.id === id) t.status = 'running';
+      }
+      writeFileSync(tasksFile, JSON.stringify(current, null, 2));
+
+      // Restart: constructor should recover orphaned task
+      const restarted = Scheduler.create({ dataDir, allowedDirs: [tmpdir()] });
+      const recovered = restarted.getTaskStatus(id);
+      expect(recovered).toBeDefined();
+      expect(recovered!.status).toBe('failed');
+      expect(recovered!.exitCode).toBe(-1);
+      expect(recovered!.stderr).toMatch(/interrupted/i);
+      expect(recovered!.completedAt).not.toBeNull();
+      restarted.stop();
     });
   });
 });
