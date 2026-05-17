@@ -1,5 +1,5 @@
 import {
-  existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync,
+  existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync, renameSync,
 } from 'node:fs';
 import { join } from 'node:path';
 import type { Automation, Task, StorageAdapter } from './types.js';
@@ -33,6 +33,18 @@ export function ensureStoreDirs(paths: ReturnType<typeof getStorePaths>): void {
 }
 
 // ---------------------------------------------------------------------------
+// Corruption recovery
+// ---------------------------------------------------------------------------
+
+function backupCorruptedFile(filePath: string): void {
+  const bakPath = `${filePath}.corrupted-${Date.now()}.bak`;
+  try {
+    renameSync(filePath, bakPath);
+    console.error(`[pi-scheduler] Corrupted file backed up to ${bakPath}`);
+  } catch {}
+}
+
+// ---------------------------------------------------------------------------
 // Load State
 // ---------------------------------------------------------------------------
 
@@ -44,6 +56,7 @@ export function loadAutomations(filePath: string): Map<string, Automation> {
     for (const a of data) map.set(a.id, a);
   } catch (err) {
     console.error(`[pi-scheduler] Failed to parse automations from ${filePath}:`, err);
+    backupCorruptedFile(filePath);
   }
   return map;
 }
@@ -56,6 +69,7 @@ export function loadTasks(filePath: string): Map<string, Task> {
     for (const t of data) map.set(t.id, t);
   } catch (err) {
     console.error(`[pi-scheduler] Failed to parse tasks from ${filePath}:`, err);
+    backupCorruptedFile(filePath);
   }
   return map;
 }
@@ -66,6 +80,7 @@ export function loadConfig(filePath: string): Record<string, unknown> {
     return JSON.parse(readFileSync(filePath, 'utf8'));
   } catch (err) {
     console.error(`[pi-scheduler] Failed to parse config from ${filePath}:`, err);
+    backupCorruptedFile(filePath);
     return {};
   }
 }
