@@ -1,6 +1,6 @@
 # pi-scheduler-core
 
-> v0.2.1 — Motor de scheduling persistente para agentes de IA. Zero dependencies (solo Node.js built-ins).
+> v0.2.2 — Motor de scheduling persistente para agentes de IA. Zero dependencies (solo Node.js built-ins).
 
 ## Install
 
@@ -45,6 +45,40 @@ scheduler.on('automation_run', (event) => {
 scheduler.stop();
 ```
 
+## Subagent Executor
+
+`scheduler-core` is zero-dependency, but supports delegating automations to an LLM subagent via an optional executor callback:
+
+```typescript
+import { Scheduler, SubagentExecutor } from 'pi-scheduler-core';
+
+const myExecutor: SubagentExecutor = async (config, cwd) => {
+  // config.agent — role name (optional)
+  // config.task  — instruction for the agent
+  // config.chain — sequential multi-agent chain (optional)
+  // ...invoke your LLM here...
+  return { exitCode: 0, stdout: '...', stderr: '' };
+};
+
+const scheduler = Scheduler.create({
+  dataDir: '~/.pi/scheduler',
+  subagentExecutor: myExecutor,
+});
+
+// Automation backed by a subagent instead of a shell command
+scheduler.createAutomation({
+  name: 'Nightly review',
+  intervalMinutes: 1440,
+  cwd: 'D:/repos/myproject',
+  subagentConfig: {
+    agent: 'reviewer',
+    task: 'Review all uncommitted changes and summarize risks.',
+  },
+});
+```
+
+`pi-scheduler-ext` ships a ready-made executor that invokes `claude CLI` with built-in agent roles.
+
 ## Security
 
 Five layers of validation:
@@ -56,7 +90,9 @@ Five layers of validation:
 
 ## Templates
 
-Built-in: `build-project`, `disk-check`, `git-sync`, `npm-test`, `npm-outdated`, `memory-check`, `service-ping`, `git-log`
+Built-in (11 total): `build-project`, `disk-check`, `git-sync`, `npm-test`, `npm-outdated`, `memory-check`, `service-ping`, `git-log`, `nightly-review`, `daily-research`, `weekly-audit`
+
+The last three are subagent templates — they require a `subagentExecutor` to be configured.
 
 ```typescript
 const auto = scheduler.instantiateTemplate('build-project', {
@@ -68,6 +104,12 @@ const auto = scheduler.instantiateTemplate('build-project', {
 const ping = scheduler.instantiateTemplate('service-ping', {
   cwd: 'C:/temp',
   params: { host: 'localhost', port: '8080' },
+});
+
+// Subagent template (needs subagentExecutor in SchedulerOptions)
+const review = scheduler.instantiateTemplate('nightly-review', {
+  name: 'Nightly review',
+  cwd: 'D:/repos/myproject',
 });
 ```
 
