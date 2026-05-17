@@ -1,6 +1,6 @@
 {
   "name": "pi-scheduler",
-  "version": "0.2.4",
+  "version": "0.3.2",
   "private": true,
   "description": "Sistema de scheduling persistente para agentes de IA en el ecosistema pi",
   "workspaces": [
