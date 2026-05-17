@@ -66,7 +66,10 @@ export const schedulerExtension: ExtensionFactory = async (api) => {
   // Event: session_start
   api.on('session_start', async (_event, ctx: ExtensionContext) => {
     const dataDir = join(ctx.cwd, '.pi', 'scheduler');
-    const allowedDirs = [ctx.cwd, join(homedir(), 'repos')];
+    const envDirs = process.env.SCHEDULER_ALLOWED_DIRS
+      ? process.env.SCHEDULER_ALLOWED_DIRS.split(';').filter(Boolean)
+      : [];
+    const allowedDirs = [ctx.cwd, join(homedir(), 'repos'), ...envDirs];
 
     scheduler = Scheduler.create({
       dataDir,
