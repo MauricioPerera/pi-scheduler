@@ -64,6 +64,7 @@ export interface Automation {
   reasoningEffort: string | null;
   subagentConfig: SubagentConfig | null;
   nextRun: number;
+  runningAt?: string | null;
   logs: ExecutionLog[];
 }
 

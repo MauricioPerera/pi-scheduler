@@ -87,6 +87,19 @@ export class Scheduler {
       this.store.saveTasks(this.tasks);
     }
 
+    // Recover automations that were executing when the process last died
+    let hadOrphanedAutomations = false;
+    for (const automation of this.automations.values()) {
+      if (automation.runningAt) {
+        this.logger.warn(`Automation "${automation.name}" was interrupted (started ${automation.runningAt}), resetting state.`);
+        automation.runningAt = null;
+        hadOrphanedAutomations = true;
+      }
+    }
+    if (hadOrphanedAutomations) {
+      this.store.saveAutomations(this.automations);
+    }
+
     if (options.webhookUrl) {
       this.config.webhookUrl = options.webhookUrl;
     }
@@ -137,9 +150,12 @@ export class Scheduler {
       if (now >= a.nextRun && !this.runningAutomations.has(a.id)) {
         this.runningAutomations.add(a.id);
         a.nextRun = now + a.intervalMinutes * 60 * 1000;
+        a.runningAt = new Date().toISOString();
         this.store.saveAutomations(this.automations);
         this.runAutomation(a).finally(() => {
           this.runningAutomations.delete(a.id);
+          a.runningAt = null;
+          this.store.saveAutomations(this.automations);
         }).catch((err) => {
           this.emit('error', { message: String(err), automationId: a.id });
         });
@@ -372,7 +388,7 @@ export class Scheduler {
     this.emit('notification', notification);
     const url = this.config.webhookUrl as string | undefined;
     if (url) {
-      sendHttpNotification(url, notification).catch((err) => {
+      sendHttpNotification(url, notification, 3, 1000, (msg) => this.logger.error(msg)).catch((err) => {
         this.logger.error(`Webhook error: ${err}`);
       });
     }

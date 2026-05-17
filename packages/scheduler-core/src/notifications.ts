@@ -114,6 +114,7 @@ export async function sendHttpNotification(
   record: Notification,
   maxRetries = 3,
   baseDelayMs = 1000,
+  onError?: (msg: string) => void,
 ): Promise<void> {
   if (!url) return;
 
@@ -160,5 +161,6 @@ export async function sendHttpNotification(
     if (success) return;
   }
 
-  console.error(`[pi-scheduler] Webhook delivery failed after ${maxRetries} attempts: ${url}`);
+  const logError = onError ?? ((msg: string) => console.error(msg));
+  logError(`[pi-scheduler] Webhook delivery failed after ${maxRetries} attempts: ${url}`);
 }

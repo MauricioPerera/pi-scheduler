@@ -1,4 +1,4 @@
-import { exec } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
@@ -34,29 +34,47 @@ function resolveSystemPrompt(agentName: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Shell exec helper
+// Spawn helper (4 MB per stream cap, Windows-safe settled flag)
 // ---------------------------------------------------------------------------
 
-function shellExec(command: string, cwd: string, timeoutMs: number): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+const MAX_STREAM_BYTES = 4 * 1024 * 1024;
+
+function spawnClaude(
+  args: string[],
+  cwd: string,
+  timeoutMs: number
+): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
-    exec(command, { cwd, timeout: timeoutMs }, (error, stdout, stderr) => {
-      resolve({
-        exitCode: error ? (error.code ?? -1) : 0,
-        stdout: stdout ?? '',
-        stderr: stderr ?? '',
-      });
+    const child = spawn('claude', args, { cwd, shell: false });
+    let stdoutBuf = '';
+    let stderrBuf = '';
+    let settled = false;
+
+    function finish(exitCode: number): void {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve({ exitCode, stdout: stdoutBuf, stderr: stderrBuf });
+    }
+
+    child.stdout.on('data', (chunk: Buffer) => {
+      if (stdoutBuf.length < MAX_STREAM_BYTES) {
+        stdoutBuf += chunk.toString();
+        if (stdoutBuf.length > MAX_STREAM_BYTES) stdoutBuf = stdoutBuf.slice(0, MAX_STREAM_BYTES);
+      }
     });
+    child.stderr.on('data', (chunk: Buffer) => {
+      if (stderrBuf.length < MAX_STREAM_BYTES) {
+        stderrBuf += chunk.toString();
+        if (stderrBuf.length > MAX_STREAM_BYTES) stderrBuf = stderrBuf.slice(0, MAX_STREAM_BYTES);
+      }
+    });
+
+    child.on('close', (code) => finish(code ?? -1));
+    child.on('error', () => finish(-1));
+
+    const timer = setTimeout(() => { child.kill(); finish(-1); }, timeoutMs);
   });
-}
-
-// ---------------------------------------------------------------------------
-// Build claude CLI invocation
-// ---------------------------------------------------------------------------
-
-function buildCommand(systemPrompt: string, task: string): string {
-  const escapedSystem = systemPrompt.replace(/"/g, '\\"');
-  const escapedTask = task.replace(/"/g, '\\"');
-  return `claude --system-prompt "${escapedSystem}" -p "${escapedTask}"`;
 }
 
 // ---------------------------------------------------------------------------
@@ -70,8 +88,7 @@ async function runSingleAgent(
   timeoutMs: number
 ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
   const systemPrompt = resolveSystemPrompt(agent);
-  const command = buildCommand(systemPrompt, task);
-  return shellExec(command, cwd, timeoutMs);
+  return spawnClaude(['--system-prompt', systemPrompt, '-p', task], cwd, timeoutMs);
 }
 
 // ---------------------------------------------------------------------------

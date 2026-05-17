@@ -41,7 +41,6 @@ function isProcessAlive(pid: number): boolean {
 export function withFileLock<T>(filePath: string, fn: () => T): T {
   const lockPath = filePath + '.lock';
   const maxRetries = 20;
-  const retryMs = 50;
 
   for (let i = 0; i < maxRetries; i++) {
     try {
@@ -63,7 +62,7 @@ export function withFileLock<T>(filePath: string, fn: () => T): T {
         }
       } catch {}
 
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, retryMs);
+      // No sleep — critical sections are microseconds; spinning is safe here
     }
   }
 
@@ -72,7 +71,11 @@ export function withFileLock<T>(filePath: string, fn: () => T): T {
 }
 
 export function safeWrite(filePath: string, content: string): void {
-  try { withFileLock(filePath, () => atomicWrite(filePath, content)); } catch {}
+  try {
+    withFileLock(filePath, () => atomicWrite(filePath, content));
+  } catch (err) {
+    console.error(`[pi-scheduler] safeWrite failed for ${filePath}:`, err);
+  }
 }
 
 // ---------------------------------------------------------------------------
