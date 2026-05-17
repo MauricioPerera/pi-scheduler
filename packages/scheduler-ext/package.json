@@ -1,6 +1,6 @@
 {
   "name": "pi-scheduler-ext",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Extension pi-coding-agent para pi-scheduler-core",
   "type": "module",
   "main": "./dist/index.js",
