@@ -61,15 +61,20 @@ async function handleList(scheduler: Scheduler, ctx: ExtensionCommandContext): P
     return;
   }
 
-  const lines = ['Name          | Interval | Next Run         | Last Status'];
-  lines.push('--------------|----------|------------------|------------');
+  const lines = ['Name          | Interval | Next Run         | Last Status | Fails'];
+  lines.push('--------------|----------|------------------|-------------|------');
 
   for (const a of automations) {
     const nextIn = Math.max(0, a.nextRun - Date.now());
     const nextStr = nextIn < 60000 ? `${Math.round(nextIn / 1000)}s` : `${Math.round(nextIn / 60000)}m`;
     const lastLog = a.logs.length > 0 ? a.logs[a.logs.length - 1] : null;
-    const lastStatus = lastLog ? (lastLog.exitCode === 0 ? 'success' : `fail(${lastLog.exitCode})`) : 'none';
-    lines.push(`${a.name.padEnd(14)}| ${String(a.intervalMinutes).padEnd(9)}| in ${nextStr.padEnd(13)}| ${lastStatus}`);
+    const lastStatus = a.runningAt
+      ? 'running'
+      : lastLog
+        ? (lastLog.exitCode === 0 ? 'success' : `fail(${lastLog.exitCode})`)
+        : 'none';
+    const fails = (a.consecutiveFailures ?? 0) > 0 ? String(a.consecutiveFailures) : '-';
+    lines.push(`${a.name.padEnd(14)}| ${String(a.intervalMinutes).padEnd(9)}| in ${nextStr.padEnd(13)}| ${lastStatus.padEnd(12)}| ${fails}`);
   }
 
   await notify(ctx, lines.join('\n'));

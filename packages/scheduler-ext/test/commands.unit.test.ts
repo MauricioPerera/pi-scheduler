@@ -74,6 +74,39 @@ describe('schedulerCommandHandler', () => {
       expect(msg).toContain('Build');
       expect(msg).toContain('60');
     });
+
+    it('shows consecutiveFailures count in Fails column', async () => {
+      const notifyFn = vi.fn();
+      const auto = {
+        id: 'a1', name: 'Build', intervalMinutes: 30,
+        nextRun: Date.now() + 3_600_000,
+        consecutiveFailures: 4,
+        logs: [{ exitCode: 1, time: '', stdout: '', stderr: '' }],
+      };
+      const handler = schedulerCommandHandler(
+        () => makeScheduler({ listAutomations: () => [auto] }) as any
+      );
+      await handler('list', { ui: { notify: notifyFn } } as any);
+      const msg: string = notifyFn.mock.calls[0][0];
+      expect(msg).toContain('Fails');
+      expect(msg).toContain('4');
+    });
+
+    it('shows "running" status when runningAt is set', async () => {
+      const notifyFn = vi.fn();
+      const auto = {
+        id: 'a1', name: 'Build', intervalMinutes: 30,
+        nextRun: Date.now() + 3_600_000,
+        runningAt: new Date().toISOString(),
+        logs: [],
+      };
+      const handler = schedulerCommandHandler(
+        () => makeScheduler({ listAutomations: () => [auto] }) as any
+      );
+      await handler('list', { ui: { notify: notifyFn } } as any);
+      const msg: string = notifyFn.mock.calls[0][0];
+      expect(msg).toContain('running');
+    });
   });
 
   describe('tasks subcommand', () => {
