@@ -79,24 +79,71 @@ scheduler.createAutomation({
 
 `pi-scheduler-ext` ships a ready-made executor that invokes `claude CLI` with built-in agent roles.
 
+## Backoff on Repeated Failures
+
+Automations that exit with a non-zero code automatically back off exponentially so a broken automation does not hammer the system:
+
+| Consecutive failures | Next retry delay |
+|---|---|
+| 1 | 1× interval |
+| 2 | 2× interval |
+| 3 | 4× interval |
+| 4 | 8× interval |
+| 5+ | 16× interval (capped at 24 h); warning logged |
+
+A successful run resets the counter to 0.
+
 ## Security
 
 Five layers of validation:
-1. Command blocklist (rm -rf, format, curl | sh, etc.)
-2. Script blocklist (os.system, shutil.rmtree, etc.)
-3. CWD allowlist (home, C:/temp, explicit allowed dirs)
-4. Template interpolation hardening (whitelist chars only)
-5. Required params validation
+
+1. **Command blocklist** — blocks dangerous patterns (`rm -rf`, `format`, `curl | sh`, etc.) using word-boundary matching.
+2. **Script blocklist** — blocks dangerous Python/shell calls (`os.system`, `shutil.rmtree`, etc.).
+3. **CWD allowlist** — working directory must be under `~`, `C:/temp`, or an explicitly configured `allowedDirs` entry.
+4. **Template interpolation hardening** — param values validated against a character whitelist before substitution.
+5. **Required params validation** — templates with `requiredParams` refuse to run if any param is missing.
+
+## Persistence
+
+State is stored as atomic JSON files (`.tmp` + `renameSync`) in `dataDir`. If a file is corrupted on disk, the scheduler renames it to `<file>.corrupted-<timestamp>.bak` before resetting to empty state, so no data is silently discarded.
+
+Optionally use `SqliteStorageAdapter` (from `pi-scheduler-ext`) for SQLite-backed persistence.
 
 ## Templates
 
-Built-in (14 total): `build-project`, `disk-check`, `git-sync`, `npm-test`, `npm-outdated`, `memory-check`, `service-ping`, `git-log`, `nightly-review`, `daily-research`, `weekly-audit`, `web-screenshot`, `url-health-check`, `login-flow`
+14 built-in templates grouped by type:
 
-The last three are Playwright templates — they require `playwright` installed in the automation's `cwd`.
+**Shell command templates** (no extra dependencies):
 
-The last three are subagent templates — they require a `subagentExecutor` to be configured.
+| ID | Default interval | Description |
+|---|---|---|
+| `build-project` | 60 min | `dotnet build` |
+| `disk-check` | 5 min | PowerShell disk space check |
+| `git-sync` | 30 min | `git pull` |
+| `npm-test` | 30 min | `npm test` |
+| `npm-outdated` | 1440 min | `npm outdated` |
+| `memory-check` | 15 min | Top 5 processes by memory |
+| `service-ping` | 5 min | TCP reachability check (params: `host`, `port`) |
+| `git-log` | 60 min | Last 10 commits |
+
+**Subagent templates** (require `subagentExecutor` in `SchedulerOptions`):
+
+| ID | Default interval | Agent role |
+|---|---|---|
+| `nightly-review` | 1440 min | `reviewer` |
+| `daily-research` | 1440 min | `researcher` |
+| `weekly-audit` | 10080 min | `oracle` |
+
+**Playwright templates** (require `playwright` installed in the automation's `cwd`):
+
+| ID | Default interval | Description |
+|---|---|---|
+| `web-screenshot` | 60 min | Screenshot to `screenshot.png` (param: `url`) |
+| `url-health-check` | 5 min | HTTP status < 400 check (param: `url`) |
+| `login-flow` | 30 min | Login form check (param: `url`; env: `PW_USERNAME`, `PW_PASSWORD`) |
 
 ```typescript
+// Shell template
 const auto = scheduler.instantiateTemplate('build-project', {
   name: 'Build MyProject',
   cwd: 'D:/repos/myproject',
@@ -112,6 +159,19 @@ const ping = scheduler.instantiateTemplate('service-ping', {
 const review = scheduler.instantiateTemplate('nightly-review', {
   name: 'Nightly review',
   cwd: 'D:/repos/myproject',
+});
+
+// Register a custom template at runtime
+scheduler.registerTemplate({
+  id: 'my-task',
+  name: 'My task',
+  description: 'Custom automation.',
+  defaultInterval: 30,
+  scriptType: null,
+  command: 'my-command',
+  script: null,
+  subagentConfig: null,
+  requiredParams: [],
 });
 ```
 

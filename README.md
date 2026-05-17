@@ -1,5 +1,7 @@
 # pi-scheduler
 
+[![CI](https://github.com/MauricioPerera/pi-scheduler/actions/workflows/ci.yml/badge.svg)](https://github.com/MauricioPerera/pi-scheduler/actions/workflows/ci.yml)
+
 Sistema de scheduling persistente para agentes de IA, inspirado en la filosofia de local-scheduler-mcp pero disenado nativamente para el ecosistema [pi](https://github.com/earendil-works/pi).
 
 ## Filosofia
@@ -11,11 +13,13 @@ Un agente de IA no deberia solo responder preguntas; deberia poder **asumir resp
 ```
 pi-scheduler/
 ├── packages/
-│   ├── scheduler-core/     # Motor de scheduling puro (zero deps opcionales)
-│   ├── scheduler-ext/      # Extension pi-coding-agent (TUI, comandos slash, eventos)
+│   ├── scheduler-core/     # Motor de scheduling puro (zero dependencies)
+│   ├── scheduler-ext/      # Extension pi-coding-agent (15 tools, slash command, subagent executor)
 │   └── scheduler-daemon/   # Proceso standalone (daemon companion opcional)
+├── scripts/
+│   └── release.mjs         # Script de release coordinado
 ├── specs/                  # Especificaciones tecnicas
-└── skills/                 # Ejemplo de skill-template
+└── skills/                 # Templates de ejemplo (Playwright, scheduler)
 ```
 
 ## Diferencias con local-scheduler-mcp

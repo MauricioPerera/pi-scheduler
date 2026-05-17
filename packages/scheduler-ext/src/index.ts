@@ -2,7 +2,7 @@
  * pi-scheduler-ext
  * Extension pi-coding-agent para pi-scheduler-core.
  *
- * Expone 14 tools, comandos slash, eventos de ciclo de vida,
+ * Expone 15 tools, comandos slash, eventos de ciclo de vida,
  * y notificaciones UI integradas.
  */
 
