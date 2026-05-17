@@ -1,7 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { rmSync, existsSync } from 'node:fs';
+import { createServer } from 'node:http';
+import type { Server } from 'node:http';
 import {
   loadNotificationsState,
   saveNotificationsState,
@@ -9,8 +11,17 @@ import {
   readNotifications,
   getPendingCount,
   getPendingSummary,
+  sendHttpNotification,
 } from '../src/notifications.js';
 import type { Notification } from '../src/types.js';
+
+const BASE_NOTIFICATION: Notification = {
+  type: 'task_run',
+  taskId: 't1',
+  taskName: 'Test',
+  timestamp: 1000,
+  result: { status: 'completed', exitCode: 0 },
+};
 
 describe('Notifications', () => {
   let filePath: string;
@@ -121,5 +132,90 @@ describe('Notifications', () => {
       expect(summary.byAutomation.Build).toBe(2);
       expect(summary.byAutomation.Test).toBe(1);
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// sendHttpNotification
+// ---------------------------------------------------------------------------
+
+function startServer(handler: Parameters<typeof createServer>[0]): Promise<{ server: Server; port: number }> {
+  return new Promise((resolve) => {
+    const server = createServer(handler);
+    server.listen(0, () => {
+      const port = (server.address() as { port: number }).port;
+      resolve({ server, port });
+    });
+  });
+}
+
+function closeServer(server: Server): Promise<void> {
+  return new Promise((resolve) => server.close(() => resolve()));
+}
+
+describe('sendHttpNotification', () => {
+  it('delivers payload to a listening server', async () => {
+    const received: string[] = [];
+    const { server, port } = await startServer((req, res) => {
+      let body = '';
+      req.on('data', (chunk) => { body += chunk; });
+      req.on('end', () => { received.push(body); res.writeHead(200); res.end(); });
+    });
+
+    await sendHttpNotification(`http://localhost:${port}`, BASE_NOTIFICATION, 1, 10);
+    await closeServer(server);
+
+    expect(received).toHaveLength(1);
+    expect(JSON.parse(received[0]).taskId).toBe('t1');
+  });
+
+  it('retries on 500 response and logs error after all attempts', async () => {
+    let attempts = 0;
+    const { server, port } = await startServer((_req, res) => {
+      attempts++;
+      res.writeHead(500);
+      res.end();
+    });
+
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await sendHttpNotification(`http://localhost:${port}`, BASE_NOTIFICATION, 2, 10);
+    spy.mockRestore();
+    await closeServer(server);
+
+    expect(attempts).toBe(2);
+  });
+
+  it('succeeds after one retry', async () => {
+    let attempts = 0;
+    const { server, port } = await startServer((_req, res) => {
+      attempts++;
+      res.writeHead(attempts === 1 ? 500 : 200);
+      res.end();
+    });
+
+    await sendHttpNotification(`http://localhost:${port}`, BASE_NOTIFICATION, 3, 10);
+    await closeServer(server);
+
+    expect(attempts).toBe(2);
+  });
+
+  it('does not throw on connection refused', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await expect(
+      sendHttpNotification('http://localhost:19993', BASE_NOTIFICATION, 1, 10),
+    ).resolves.toBeUndefined();
+    spy.mockRestore();
+  });
+
+  it('does not throw on invalid URL', async () => {
+    await expect(
+      sendHttpNotification('not-a-url', BASE_NOTIFICATION, 1, 10),
+    ).resolves.toBeUndefined();
+  });
+
+  it('does not throw on empty url', async () => {
+    await expect(
+      sendHttpNotification('', BASE_NOTIFICATION, 1, 10),
+    ).resolves.toBeUndefined();
   });
 });

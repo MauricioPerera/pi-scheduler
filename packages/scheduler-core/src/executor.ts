@@ -32,6 +32,7 @@ export function executeCommand(
     let stderrSize = 0;
     let stdoutTruncated = false;
     let stderrTruncated = false;
+    let settled = false;
 
     child.stdout.on('data', (chunk: Buffer) => {
       if (stdoutSize < MAX_OUTPUT_BYTES) {
@@ -49,13 +50,35 @@ export function executeCommand(
       }
     });
 
-    let timedOut = false;
+    function buildResult(exitCode: number): ExecutionResult {
+      let stdout = Buffer.concat(stdoutChunks).toString('utf8');
+      let stderr = Buffer.concat(stderrChunks).toString('utf8');
+      if (stdoutTruncated) stdout += '\n[output truncated at 4 MB]';
+      if (stderrTruncated) stderr += '\n[output truncated at 4 MB]';
+      return { exitCode, stdout, stderr };
+    }
+
+    function finish(exitCode: number): void {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (signal) signal.removeEventListener('abort', onAbort);
+      resolve(buildResult(exitCode));
+    }
+
+    // On Windows, killing the shell process may leave child processes alive
+    // keeping stdio open, so 'close' never fires. Resolve immediately on
+    // timeout/abort rather than waiting for the stream to close.
     const timer = setTimeout(() => {
-      timedOut = true;
       child.kill();
+      finish(-1);
     }, timeoutMs);
 
-    const onAbort = () => child.kill();
+    const onAbort = () => {
+      child.kill();
+      finish(-1);
+    };
+
     if (signal) {
       if (signal.aborted) {
         onAbort();
@@ -65,19 +88,7 @@ export function executeCommand(
     }
 
     child.on('close', (code) => {
-      clearTimeout(timer);
-      if (signal) signal.removeEventListener('abort', onAbort);
-
-      let stdout = Buffer.concat(stdoutChunks).toString('utf8');
-      let stderr = Buffer.concat(stderrChunks).toString('utf8');
-      if (stdoutTruncated) stdout += '\n[output truncated at 4 MB]';
-      if (stderrTruncated) stderr += '\n[output truncated at 4 MB]';
-
-      resolve({
-        exitCode: timedOut ? -1 : (code ?? -1),
-        stdout,
-        stderr,
-      });
+      finish(code ?? -1);
     });
   });
 }

@@ -35,6 +35,18 @@ function isRunning(pid: number): boolean {
   }
 }
 
+let activeScheduler: ReturnType<typeof Scheduler.create> | null = null;
+
+function emergencyShutdown(label: string, err: unknown): void {
+  console.error(`[Daemon] ${label}:`, err);
+  try { activeScheduler?.stop(); } catch {}
+  removePid();
+  process.exit(1);
+}
+
+process.on('uncaughtException', (err) => emergencyShutdown('Uncaught exception', err));
+process.on('unhandledRejection', (reason) => emergencyShutdown('Unhandled rejection', reason));
+
 async function start(): Promise<void> {
   const existingPid = readPid();
   if (existingPid && isRunning(existingPid)) {
@@ -56,6 +68,7 @@ async function start(): Promise<void> {
     },
   });
 
+  activeScheduler = scheduler;
   scheduler.start();
   console.log('[Daemon] Scheduler tick loop active (30s interval)');
 

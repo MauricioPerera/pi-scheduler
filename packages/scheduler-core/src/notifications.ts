@@ -113,6 +113,7 @@ export async function sendHttpNotification(
   url: string,
   record: Notification,
   maxRetries = 3,
+  baseDelayMs = 1000,
 ): Promise<void> {
   if (!url) return;
 
@@ -124,7 +125,9 @@ export async function sendHttpNotification(
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     if (attempt > 0) {
-      await new Promise<void>((resolve) => setTimeout(resolve, 1000 * Math.pow(2, attempt - 1)));
+      const base = baseDelayMs * Math.pow(2, attempt - 1);
+      const jittered = Math.floor(base * (0.5 + Math.random() * 0.5));
+      await new Promise<void>((resolve) => setTimeout(resolve, jittered));
     }
 
     const success = await new Promise<boolean>((resolve) => {
