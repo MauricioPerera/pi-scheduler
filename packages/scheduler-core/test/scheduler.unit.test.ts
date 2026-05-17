@@ -134,6 +134,70 @@ describe('Scheduler', () => {
     });
   });
 
+  describe('consecutiveFailures backoff', () => {
+    it('increments consecutiveFailures on failed automation run', async () => {
+      const s = Scheduler.create({
+        dataDir: createTempDir(),
+        tickIntervalMs: 50,
+        allowedDirs: [tmpdir()],
+        subagentExecutor: async () => ({ exitCode: 1, stdout: '', stderr: 'boom' }),
+      });
+      const auto = s.createAutomation({
+        name: 'BackoffTest', intervalMinutes: 60, cwd: tmpdir(),
+        subagentConfig: { task: 'test' },
+      });
+
+      s.start();
+      await new Promise<void>((resolve) => { s.on('automation_run', () => resolve()); });
+      s.stop();
+
+      expect(auto.consecutiveFailures).toBe(1);
+    });
+
+    it('applies exponential backoff after repeated failures', async () => {
+      const s = Scheduler.create({
+        dataDir: createTempDir(),
+        tickIntervalMs: 50,
+        allowedDirs: [tmpdir()],
+        subagentExecutor: async () => ({ exitCode: 1, stdout: '', stderr: 'boom' }),
+      });
+      const auto = s.createAutomation({
+        name: 'BackoffRepeat', intervalMinutes: 1, cwd: tmpdir(),
+        subagentConfig: { task: 'test' },
+      });
+      auto.consecutiveFailures = 3;
+
+      s.start();
+      await new Promise<void>((resolve) => { s.on('automation_run', () => resolve()); });
+      s.stop();
+
+      expect(auto.consecutiveFailures).toBe(4);
+      // backoff = min(60000ms * 2^3, 24h) = 480000ms
+      const expectedMs = Math.min(60000 * Math.pow(2, 3), 24 * 60 * 60 * 1000);
+      expect(auto.nextRun).toBeGreaterThan(Date.now() + expectedMs / 2);
+    });
+
+    it('resets consecutiveFailures to 0 on success', async () => {
+      const s = Scheduler.create({
+        dataDir: createTempDir(),
+        tickIntervalMs: 50,
+        allowedDirs: [tmpdir()],
+        subagentExecutor: async () => ({ exitCode: 0, stdout: 'ok', stderr: '' }),
+      });
+      const auto = s.createAutomation({
+        name: 'SuccessReset', intervalMinutes: 60, cwd: tmpdir(),
+        subagentConfig: { task: 'test' },
+      });
+      auto.consecutiveFailures = 5;
+
+      s.start();
+      await new Promise<void>((resolve) => { s.on('automation_run', () => resolve()); });
+      s.stop();
+
+      expect(auto.consecutiveFailures).toBe(0);
+    });
+  });
+
   describe('task recovery on restart', () => {
     it('marks running tasks as failed when scheduler restarts', () => {
       const task = scheduler.runTask({

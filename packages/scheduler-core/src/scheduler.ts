@@ -163,6 +163,21 @@ export class Scheduler {
     }
   }
 
+  private recordFailure(automation: Automation): void {
+    const intervalMs = automation.intervalMinutes * 60 * 1000;
+    const maxBackoffMs = 24 * 60 * 60 * 1000;
+    const failures = (automation.consecutiveFailures ?? 0) + 1;
+    automation.consecutiveFailures = failures;
+    const backoffMs = Math.min(intervalMs * Math.pow(2, failures - 1), maxBackoffMs);
+    automation.nextRun = Date.now() + backoffMs;
+    if (failures >= 5) {
+      this.logger.warn(
+        `Automation "${automation.name}" has failed ${failures} consecutive times; ` +
+        `next retry in ${Math.round(backoffMs / 60000)}m`
+      );
+    }
+  }
+
   private async runAutomation(automation: Automation): Promise<void> {
     try {
       const result = automation.subagentConfig && this.subagentExecutor
@@ -176,6 +191,13 @@ export class Scheduler {
       };
       automation.logs.push(log);
       if (automation.logs.length > 100) automation.logs.shift();
+
+      if (result.exitCode === 0) {
+        automation.consecutiveFailures = 0;
+      } else {
+        this.recordFailure(automation);
+      }
+
       this.store.saveAutomations(this.automations);
 
       const notification: Notification = {
@@ -193,6 +215,8 @@ export class Scheduler {
         result: log,
       });
     } catch (err) {
+      this.recordFailure(automation);
+      this.store.saveAutomations(this.automations);
       this.emit('error', { message: String(err), automationId: automation.id });
     }
   }

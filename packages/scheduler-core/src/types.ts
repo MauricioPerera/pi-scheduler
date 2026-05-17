@@ -65,6 +65,7 @@ export interface Automation {
   subagentConfig: SubagentConfig | null;
   nextRun: number;
   runningAt?: string | null;
+  consecutiveFailures?: number;
   logs: ExecutionLog[];
 }
 
