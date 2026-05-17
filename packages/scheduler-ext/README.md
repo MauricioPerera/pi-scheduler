@@ -1,6 +1,6 @@
 # pi-scheduler-ext
 
-> v0.3.3 — Extension pi-coding-agent para pi-scheduler-core.
+> v0.3.5 — Extension pi-coding-agent para pi-scheduler-core.
 
 Integrates `pi-scheduler-core` into the [pi-coding-agent](https://github.com/earendil-works/pi) runtime. Registers 15 AgentTools, one slash command, lifecycle event handlers, and a ready-made subagent executor that delegates automations to the `claude` CLI.
 
