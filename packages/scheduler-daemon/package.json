@@ -1,6 +1,6 @@
 {
   "name": "pi-scheduler-daemon",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Standalone daemon for pi-scheduler automations",
   "type": "module",
   "bin": {
