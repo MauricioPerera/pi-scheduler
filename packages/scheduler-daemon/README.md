@@ -1,6 +1,6 @@
 # pi-scheduler-daemon
 
-> v0.3.5 — Standalone daemon for pi-scheduler. Runs automations even when pi is closed.
+> v0.4.0 — Standalone daemon for pi-scheduler. Runs automations even when pi is closed.
 
 ## Install
 
