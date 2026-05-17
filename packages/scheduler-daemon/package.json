@@ -1,6 +1,6 @@
 {
   "name": "pi-scheduler-daemon",
-  "version": "0.3.5",
+  "version": "0.4.0",
   "description": "Standalone daemon for pi-scheduler automations",
   "type": "module",
   "bin": {
@@ -18,7 +18,7 @@
     "prepublishOnly": "npm run clean && npm run build"
   },
   "dependencies": {
-    "pi-scheduler-core": "^0.3.5"
+    "pi-scheduler-core": "^0.4.0"
   },
   "keywords": [
     "scheduler",

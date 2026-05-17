@@ -1,6 +1,6 @@
 {
   "name": "pi-scheduler-ext",
-  "version": "0.3.5",
+  "version": "0.4.0",
   "description": "Extension pi-coding-agent para pi-scheduler-core",
   "type": "module",
   "main": "./dist/index.js",
@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "better-sqlite3": "^12.10.0",
-    "pi-scheduler-core": "^0.3.5"
+    "pi-scheduler-core": "^0.4.0"
   },
   "license": "MIT",
   "engines": {
