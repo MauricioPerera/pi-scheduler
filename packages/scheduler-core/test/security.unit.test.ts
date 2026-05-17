@@ -77,8 +77,9 @@ describe('Security', () => {
       expect(validateCwd(homedir()).ok).toBe(true);
     });
 
-    it('allows C:/temp', () => {
-      expect(validateCwd('C:/temp').ok).toBe(true);
+    it('allows platform temp dir', () => {
+      const tmpDir = process.platform === 'win32' ? 'C:/temp' : '/tmp';
+      expect(validateCwd(tmpDir).ok).toBe(true);
     });
 
     it('allows custom allowed dirs', () => {

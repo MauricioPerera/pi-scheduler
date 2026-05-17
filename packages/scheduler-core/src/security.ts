@@ -124,10 +124,11 @@ export function validateCwd(
     userHome,
     resolve(userHome, '.pi').toLowerCase(),
     resolve(userHome, '.codex').toLowerCase(),
-    resolve('C:/temp').toLowerCase(),
-    resolve('C:/tmp').toLowerCase(),
     resolve(userHome, 'documents').toLowerCase(),
     resolve(userHome, 'desktop').toLowerCase(),
+    ...(process.platform === 'win32'
+      ? [resolve('C:/temp').toLowerCase(), resolve('C:/tmp').toLowerCase()]
+      : ['/tmp', '/var/tmp']),
     ...extraAllowed,
   ];
 
