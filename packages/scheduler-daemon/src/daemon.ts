@@ -6,6 +6,9 @@ import { writePid, removePid, readPid, isProcessRunning } from './pid-utils.js';
 
 const DATA_DIR = process.env.SCHEDULER_DATA_DIR || join(homedir(), '.pi', 'scheduler');
 const PID_FILE = process.env.SCHEDULER_PID_FILE || join(DATA_DIR, '.daemon.pid');
+const ALLOWED_DIRS: string[] = process.env.SCHEDULER_ALLOWED_DIRS
+  ? process.env.SCHEDULER_ALLOWED_DIRS.split(';').filter(Boolean)
+  : [];
 
 let activeScheduler: ReturnType<typeof Scheduler.create> | null = null;
 
@@ -29,10 +32,14 @@ async function start(): Promise<void> {
   writePid(PID_FILE, DATA_DIR, process.pid);
   console.log(`[Daemon] Starting pi-scheduler-daemon (PID ${process.pid})`);
   console.log(`[Daemon] Data dir: ${DATA_DIR}`);
+  if (ALLOWED_DIRS.length > 0) {
+    console.log(`[Daemon] Allowed dirs: ${ALLOWED_DIRS.join(', ')}`);
+  }
 
   const scheduler = Scheduler.create({
     dataDir: DATA_DIR,
     tickIntervalMs: 30000,
+    allowedDirs: ALLOWED_DIRS,
     logger: {
       info: (m) => console.log(`[Scheduler] ${m}`),
       warn: (m) => console.warn(`[Scheduler] ${m}`),

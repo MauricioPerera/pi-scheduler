@@ -22,6 +22,7 @@ export {
   ackNotificationsTool,
   getPendingSummaryTool,
   setWebhookTool,
+  createSubagentAutomationTool,
 } from './tools.js';
 export { schedulerCommandHandler } from './commands.js';
 export { loadSkillTemplates, parsedTemplateToCoreTemplate } from './skill-loader.js';

@@ -183,15 +183,19 @@ const { chromium } = req('playwright');
     defaultInterval: 30,
     scriptType: 'javascript',
     command: null,
-    script: `const { createRequire } = require('node:module');
+    script: `if (!process.env.PW_USERNAME || !process.env.PW_PASSWORD) {
+  console.error('Missing credentials: set PW_USERNAME and PW_PASSWORD environment variables.');
+  process.exit(1);
+}
+const { createRequire } = require('node:module');
 const req = createRequire(process.cwd() + '/package.json');
 const { chromium } = req('playwright');
 (async () => {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
   await page.goto('\${url}');
-  await page.fill('[name="username"], [name="email"], input[type="email"]', process.env.PW_USERNAME || '');
-  await page.fill('[name="password"], input[type="password"]', process.env.PW_PASSWORD || '');
+  await page.fill('[name="username"], [name="email"], input[type="email"]', process.env.PW_USERNAME);
+  await page.fill('[name="password"], input[type="password"]', process.env.PW_PASSWORD);
   await page.click('[type="submit"]');
   await page.waitForNavigation({ timeout: 10000 }).catch(() => {});
   const title = await page.title();

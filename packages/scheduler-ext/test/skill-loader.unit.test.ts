@@ -86,6 +86,59 @@ console.log('hello');
     expect(templates).toHaveLength(1);
     expect(templates[0].id).toBe('my-task');
   });
+
+  it('ignores bullets that do not match key-value format', () => {
+    const dir = writeSkill(join(BASE, 'malformed-bullet'), `
+## my-task
+- Just a note with no key-value structure
+- **Command**: \`echo hi\`
+`);
+    const templates = loadSkillTemplates(dir);
+    expect(templates).toHaveLength(1);
+    expect(templates[0].command).toBe('echo hi');
+  });
+
+  it('defaults scriptType to javascript for a code block without a language', () => {
+    const dir = writeSkill(join(BASE, 'no-lang'), `
+## unlabeled
+\`\`\`
+console.log('hi');
+\`\`\`
+`);
+    const templates = loadSkillTemplates(dir);
+    expect(templates).toHaveLength(1);
+    expect(templates[0].scriptType).toBe('javascript');
+    expect(templates[0].script).toContain("console.log('hi')");
+  });
+
+  it('produces a template with defaults when a heading has no bullets or code', () => {
+    const dir = writeSkill(join(BASE, 'empty-heading'), `
+## bare-template
+
+Some free text that is not parsed.
+`);
+    const templates = loadSkillTemplates(dir);
+    expect(templates).toHaveLength(1);
+    expect(templates[0].id).toBe('bare-template');
+    expect(templates[0].command).toBeNull();
+    expect(templates[0].script).toBeNull();
+    expect(templates[0].defaultInterval).toBe(60);
+  });
+
+  it('returns [] for an empty SKILL.md', () => {
+    const dir = writeSkill(join(BASE, 'empty-file'), '');
+    expect(loadSkillTemplates(dir)).toEqual([]);
+  });
+
+  it('defaults interval to 60 when interval value is not a number', () => {
+    const dir = writeSkill(join(BASE, 'bad-interval'), `
+## my-task
+- **Command**: \`echo hi\`
+- **Interval**: every-hour
+`);
+    const templates = loadSkillTemplates(dir);
+    expect(templates[0].defaultInterval).toBe(60);
+  });
 });
 
 describe('parsedTemplateToCoreTemplate', () => {

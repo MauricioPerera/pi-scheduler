@@ -27,6 +27,7 @@ pi-scheduler-daemon status
 |---|---|---|
 | `SCHEDULER_DATA_DIR` | `~/.pi/scheduler` | Data directory (shared with pi-scheduler-core) |
 | `SCHEDULER_PID_FILE` | `{SCHEDULER_DATA_DIR}/.daemon.pid` | PID file path |
+| `SCHEDULER_ALLOWED_DIRS` | _(none — uses core defaults)_ | Semicolon-separated list of directories that automations may use as CWD. Example: `/home/user/repos;/tmp` |
 
 ## How it works
 

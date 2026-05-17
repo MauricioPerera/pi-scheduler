@@ -1,9 +1,9 @@
-# API Publica de scheduler-core
+﻿# API Publica de scheduler-core
 
 ## Entry Point
 
 `	ypescript
-import { Scheduler } from '@earendil-works/pi-scheduler-core';
+import { Scheduler } from 'pi-scheduler-core';
 `
 
 ## Scheduler.create(options)
@@ -22,6 +22,10 @@ interface SchedulerOptions {
   allowedDirs?: string[];
   /** Logger opcional. */
   logger?: Logger;
+  /** Executor para subagent automations. Provisto por scheduler-ext en produccion. */
+  subagentExecutor?: SubagentExecutor;
+  /** Adapter de persistencia. Default: JsonStorageAdapter. */
+  storageAdapter?: StorageAdapter;
 }
 
 interface Logger {
@@ -249,7 +253,10 @@ interface Automation {
   scriptType: 'javascript' | 'python' | 'powershell';
   model: string | null;
   reasoningEffort: string | null;
-  nextRun: number;          // Timestamp
+  subagentConfig: SubagentConfig | null;
+  nextRun: number;               // Timestamp Unix (ms)
+  runningAt?: string | null;     // ISO 8601 si esta en ejecucion
+  consecutiveFailures?: number;  // Contador para backoff exponencial
   logs: ExecutionLog[];
 }
 `
@@ -309,17 +316,41 @@ interface Template {
   scriptType: 'javascript' | 'python' | 'powershell' | null;
   command: string | null;
   script: string | null;
+  subagentConfig: SubagentConfig | null;
   requiredParams: string[];
 }
 `
 
 ## Templates Built-in
 
-| ID | Comando | Intervalo | Uso |
+### Shell (8)
+
+| ID | Comando | Intervalo | Params |
 |---|---|---|---|
-| uild-project | dotnet build | 60 min | Compilar proyectos .NET |
-| disk-check | Get-PSDrive C \| Select-Object Used,Free | 5 min | Monitorear disco |
-| git-sync | git pull | 30 min | Sincronizar repo |
+| `build-project` | `dotnet build` | 60 min | — |
+| `disk-check` | `Get-PSDrive C \| Select-Object Used,Free` | 5 min | — |
+| `git-sync` | `git pull` | 30 min | — |
+| `npm-test` | `npm test` | 30 min | — |
+| `npm-outdated` | `npm outdated` | 1440 min | — |
+| `memory-check` | `Get-Process \| Sort-Object WorkingSet` | 15 min | — |
+| `service-ping` | `Test-NetConnection -ComputerName ${host} -Port ${port}` | 5 min | `host`, `port` |
+| `git-log` | `git log --oneline -10` | 60 min | — |
+
+### Subagent (3)
+
+| ID | Agente | Intervalo | Uso |
+|---|---|---|---|
+| `nightly-review` | `reviewer` | 1440 min | Revision de cambios sin commit |
+| `daily-research` | `researcher` | 1440 min | Chequear nuevas versiones de dependencias |
+| `weekly-audit` | `oracle` | 10080 min | Auditoria semanal de calidad y drift |
+
+### Playwright (3)
+
+| ID | Descripcion | Intervalo | Params |
+|---|---|---|---|
+| `web-screenshot` | Captura screenshot de una URL | 60 min | `url` |
+| `url-health-check` | Verifica HTTP < 400 en una URL | 5 min | `url` |
+| `login-flow` | Verifica formulario de login | 30 min | `url` + env `PW_USERNAME`/`PW_PASSWORD` |
 
 ## Custom Templates
 
@@ -349,4 +380,4 @@ scheduler.instantiateTemplate('build-project', {
 });
 `
 
-Seguridad: los valores interpolados deben coincidir con /^[a-zA-Z0-9_\\-/: .~]+$/. Caracteres shell (;, |, &, $, comillas) son rechazados.
+Seguridad: los valores interpolados deben coincidir con `/^[a-zA-Z0-9_\\/: .~-]+$/`. Caracteres shell (`;`, `|`, `&`, `$`, comillas, backslash extra) son rechazados. Esta validacion solo aplica a la ruta `instantiateTemplate`, no a `createAutomation`.

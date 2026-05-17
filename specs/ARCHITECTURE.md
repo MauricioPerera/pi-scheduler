@@ -37,11 +37,11 @@
 src/
 ├── index.ts              # Public API
 ├── types.ts              # Interfaces y tipos
-├── store.ts              # DocStore (Map + atomic write)
-├── tick.ts               # Tick loop (setInterval)
-├── executor.ts           # Exec de comandos/scripts
+├── scheduler.ts          # Scheduler class (tick loop, orchestration)
+├── store.ts              # DocStore (Map + atomic write, corruption recovery)
+├── executor.ts           # Exec de comandos/scripts via spawn
 ├── security.ts           # Validacion de comandos, scripts, cwd
-├── templates.ts          # Built-in templates + interpolacion
+├── templates.ts          # 14 built-in templates + interpolacion
 ├── notifications.ts      # JSONL append-only + ack
 └── utils.ts              # Helpers (atomicWrite, generateId, etc.)
 `
@@ -88,11 +88,12 @@ No hay indices complejos. Con <100 automations y <1000 tasks, un Map es optimo.
 `
 src/
 ├── index.ts              # Entry point de la extension
-├── extension.ts          # ExtensionFactory y registro
+├── extension.ts          # ExtensionFactory y registro (15 tools, lifecycle)
 ├── tools.ts              # AgentTool definitions para pi
 ├── commands.ts           # Comandos slash (/scheduler list, /scheduler delete)
-├── notifications-ui.ts   # Conexion de notificaciones a ExtensionUIContext
-├── skill-loader.ts       # Carga templates como skills de pi
+├── subagent-executor.ts  # Executor via claude CLI (SubagentExecutor callback)
+├── skill-loader.ts       # Carga templates como skills de pi (SKILL.md parser)
+├── sqlite-adapter.ts     # SqliteStorageAdapter (opt-in, requiere better-sqlite3)
 └── types.ts              # Tipos especificos de la extension
 `
 
@@ -216,21 +217,27 @@ El core sigue siendo simple. La capa analytics es opcional y solo se activa si e
 
 ### Daemon Companion
 
-Si se necesita que las automaciones sigan corriendo despues de cerrar pi:
+`pi-scheduler-daemon` es un proceso Node.js standalone que mantiene el tick loop activo aunque pi este cerrado:
 
 `
 pi-coding-agent (TUI cerrada)
         |
         v
-pi-scheduler-daemon (proceso Node.js separado)
+pi-scheduler-daemon (proceso independiente, npm install -g pi-scheduler-daemon)
         |
         v
 Lee ~/.pi/scheduler/automations.json
-Ejecuta tick loop independiente
+Ejecuta tick loop independiente (30s)
 Escribe notificaciones a JSONL
         |
         v
-Cuando pi se reinicia -> lee notificaciones pendientes
+Cuando pi se reinicia -> pi-scheduler-ext lee notificaciones pendientes
 `
 
-El daemon seria un wrapper thin alrededor de scheduler-core que corre como proceso de fondo.
+Modulos del daemon:
+
+`
+src/
+├── daemon.ts      # CLI (start / stop / status) + tick loop
+└── pid-utils.ts   # writePid, removePid, readPid, isProcessRunning
+`

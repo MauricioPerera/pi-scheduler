@@ -1,4 +1,4 @@
-# Modelo de Seguridad
+﻿# Modelo de Seguridad
 
 ## Filosofia
 
@@ -31,7 +31,7 @@ shutdown -h
 reg delete
 `
 
-Implementacion: alidateCommand(command) hace .toLowerCase().includes() contra la lista de patrones.
+Implementacion: `validateCommand(command)` aplica `.toLowerCase().includes()` para los substrings de la lista, y word-boundary regex (`\b<word>\b`) para `diskpart`, `mkfs`, `curl`, `wget` (para no bloquear substrings como `curl-config`).
 
 ### 2. Blocklist de Scripts
 
@@ -54,38 +54,37 @@ subprocess.call
 dd if=/dev/zero
 `
 
-Implementacion: alidateScript(script, scriptType).
+Implementacion: `validateScript(script)` con los mismos dos mecanismos (substrings + word-boundary regex para `diskpart`, `mkfs`, `curl`, `wget`, `rmsync`, `rmdirsync`).
 
 ### 3. Allowlist de Directorios (CWD)
 
 Solo los siguientes directorios y sus subdirectorios estan permitidos como cwd:
 
-- Directorio home del usuario
-- ~/.pi (o $CODEX_HOME/.codex si aplica)
-- C:/temp
-- C:/tmp
-- Directorios adicionales via SCHEDULER_ALLOWED_DIRS (semicolon-separated)
+- `$HOME` (directorio home del usuario)
+- `$HOME/.pi`
+- `$HOME/.codex`
+- `$HOME/Documents`
+- `$HOME/Desktop`
+- Windows: `C:/temp`, `C:/tmp` | Linux/macOS: `/tmp`, `/var/tmp`
+- Directorios adicionales pasados como `allowedDirs` en `SchedulerOptions` (por ejemplo, via `SCHEDULER_ALLOWED_DIRS` en `pi-scheduler-daemon`)
 
-Implementacion: alidateCwd(cwd) hace path.resolve() + startsWith() contra la allowlist.
+Implementacion: `validateCwd(cwd, extraDirs)` hace `path.resolve()` + `startsWith()` contra la allowlist. El parametro `extraDirs` permite extender la lista en tiempo de ejecucion.
 
 ### 4. Hardening de Interpolacion
 
 Los valores pasados a ${key} en templates deben coincidir con:
 
-`egex
-^[a-zA-Z0-9_\\-/: .~]+$
-`
+```
+^[a-zA-Z0-9_\\/: .~-]+$
+```
 
-Caracteres rechazados:
-- Metacaracteres shell: ;, |, &, $, `  `, ', "
-- Control: \n, \r, \t
-- Escapes: \\
+Caracteres rechazados: `;`, `|`, `&`, `$`, backticks, comillas, `\n`, `\r`, `\t`, backslash extra.
 
-Implementacion: alidateInterpolationValue(v) con regex whitelist.
+Implementacion: `validateInterpolationValue(v)` con regex whitelist. **Solo aplica a la ruta `instantiateTemplate`**, no a `createAutomation` directamente.
 
 ### 5. Parametros Requeridos
 
-Los templates pueden declarar equiredParams. Si falta alguno, se retorna error antes de ejecutar nada. No se envia ${key} literal al shell.
+Los templates pueden declarar `requiredParams`. Si falta alguno, se retorna error antes de ejecutar nada. No se envia `${key}` literal al shell. **Solo aplica a la ruta `instantiateTemplate`**.
 
 `	ypescript
 const template = {
@@ -105,7 +104,7 @@ scheduler.instantiateTemplate('deploy-app', { params: {} });
 function validateTask(args: TaskArgs): ValidationResult {
   const cmdResult = validateCommand(args.command);
   if (!cmdResult.ok) return cmdResult;
-  const scriptResult = validateScript(args.script, args.scriptType);
+  const scriptResult = validateScript(args.script);
   if (!scriptResult.ok) return scriptResult;
   const cwdResult = validateCwd(args.cwd);
   if (!cwdResult.ok) return cwdResult;
@@ -136,7 +135,7 @@ const scheduler = Scheduler.create({
 
 ## Reglas para Desarrolladores de Extensiones
 
-- NUNCA ejecutar val() sobre output del LLM.
+- NUNCA ejecutar val() sobre output del LLM.
 - NUNCA pasar strings de usuario directamente a child_process sin validar.
 - Siempre usar path.resolve() antes de comparar paths.
 - Las notificaciones NUNCA deben incluir stdout completo si contiene secretos. Filtrar via regex antes de persistir.
