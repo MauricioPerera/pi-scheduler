@@ -4,7 +4,7 @@ import type {
   CreateAutomationOptions,
   RunTaskOptions,
   InstantiateTemplateOptions,
-} from '@earendil-works/pi-scheduler-core';
+} from 'pi-scheduler-core';
 import type { ToolDefinition } from '@earendil-works/pi-coding-agent';
 
 // ---------------------------------------------------------------------------
@@ -51,7 +51,7 @@ export function createAutomationTool(getScheduler: () => Scheduler) {
       };
       const automation = getScheduler().createAutomation(options);
       return {
-        content: [{ type: 'text', text: `Created automation ${automation.id}` }],
+        content: [{ type: 'text' as const, text: `Created automation ${automation.id}` }],
         details: automation,
       };
     },
@@ -79,7 +79,7 @@ export function listAutomationsTool(getScheduler: () => Scheduler) {
         lastLog: a.logs.length > 0 ? a.logs[a.logs.length - 1] : null,
       }));
       return {
-        content: [{ type: 'text', text: JSON.stringify(list, null, 2) }],
+        content: [{ type: 'text' as const, text: JSON.stringify(list, null, 2) }],
         details: list,
       };
     },
@@ -103,7 +103,7 @@ export function deleteAutomationTool(getScheduler: () => Scheduler) {
     async execute(toolCallId: string, params: any) {
       const deleted = getScheduler().deleteAutomation(params.id);
       return {
-        content: [{ type: 'text', text: deleted ? 'Deleted' : 'Not found' }],
+        content: [{ type: 'text' as const, text: deleted ? 'Deleted' : 'Not found' }],
         details: { deleted },
       };
     },
@@ -128,7 +128,7 @@ export function getAutomationLogsTool(getScheduler: () => Scheduler) {
     async execute(toolCallId: string, params: any) {
       const logs = getScheduler().getAutomationLogs(params.id, params.limit);
       return {
-        content: [{ type: 'text', text: JSON.stringify(logs, null, 2) }],
+        content: [{ type: 'text' as const, text: JSON.stringify(logs, null, 2) }],
         details: logs,
       };
     },
@@ -150,7 +150,7 @@ export function listTemplatesTool(getScheduler: () => Scheduler) {
     async execute(_toolCallId: string) {
       const items = getScheduler().listTemplates();
       return {
-        content: [{ type: 'text', text: JSON.stringify(items, null, 2) }],
+        content: [{ type: 'text' as const, text: JSON.stringify(items, null, 2) }],
         details: items,
       };
     },
@@ -182,7 +182,7 @@ export function instantiateTemplateTool(getScheduler: () => Scheduler) {
           parsedParams = JSON.parse(params.params);
         } catch (e) {
           return {
-            content: [{ type: 'text', text: `Invalid JSON in params: ${e instanceof Error ? e.message : String(e)}` }],
+            content: [{ type: 'text' as const, text: `Invalid JSON in params: ${e instanceof Error ? e.message : String(e)}` }],
             details: {},
           };
         }
@@ -195,7 +195,7 @@ export function instantiateTemplateTool(getScheduler: () => Scheduler) {
       };
       const automation = getScheduler().instantiateTemplate(params.templateId, options);
       return {
-        content: [{ type: 'text', text: `Created automation ${automation.id} from template ${params.templateId}` }],
+        content: [{ type: 'text' as const, text: `Created automation ${automation.id} from template ${params.templateId}` }],
         details: automation,
       };
     },
@@ -232,7 +232,7 @@ export function runTaskTool(getScheduler: () => Scheduler) {
       };
       const task = getScheduler().runTask(options);
       return {
-        content: [{ type: 'text', text: `Task ${task.id} started. Use get_task_status with id=${task.id} to check progress.` }],
+        content: [{ type: 'text' as const, text: `Task ${task.id} started. Use get_task_status with id=${task.id} to check progress.` }],
         details: task,
       };
     },
@@ -257,12 +257,12 @@ export function getTaskStatusTool(getScheduler: () => Scheduler) {
       const task = getScheduler().getTaskStatus(params.id);
       if (!task) {
         return {
-          content: [{ type: 'text', text: `Task not found: ${params.id}` }],
+          content: [{ type: 'text' as const, text: `Task not found: ${params.id}` }],
           details: null,
         };
       }
       return {
-        content: [{ type: 'text', text: JSON.stringify(task, null, 2) }],
+        content: [{ type: 'text' as const, text: JSON.stringify(task, null, 2) }],
         details: task,
       };
     },
@@ -291,7 +291,7 @@ export function listTasksTool(getScheduler: () => Scheduler) {
         exitCode: t.exitCode,
       }));
       return {
-        content: [{ type: 'text', text: JSON.stringify(list, null, 2) }],
+        content: [{ type: 'text' as const, text: JSON.stringify(list, null, 2) }],
         details: list,
       };
     },
@@ -315,7 +315,7 @@ export function deleteTaskTool(getScheduler: () => Scheduler) {
     async execute(toolCallId: string, params: any) {
       const deleted = getScheduler().deleteTask(params.id);
       return {
-        content: [{ type: 'text', text: deleted ? 'Deleted' : 'Not found' }],
+        content: [{ type: 'text' as const, text: deleted ? 'Deleted' : 'Not found' }],
         details: { deleted },
       };
     },
@@ -337,7 +337,7 @@ export function checkNotificationsTool(getScheduler: () => Scheduler) {
     async execute(_toolCallId: string) {
       const notifications = getScheduler().checkNotifications();
       return {
-        content: [{ type: 'text', text: JSON.stringify(notifications, null, 2) }],
+        content: [{ type: 'text' as const, text: JSON.stringify(notifications, null, 2) }],
         details: { count: notifications.length, notifications },
       };
     },
@@ -361,7 +361,7 @@ export function ackNotificationsTool(getScheduler: () => Scheduler) {
     async execute(toolCallId: string, params: any) {
       getScheduler().ackNotifications(params.timestamp);
       return {
-        content: [{ type: 'text', text: 'Notifications acknowledged' }],
+        content: [{ type: 'text' as const, text: 'Notifications acknowledged' }],
         details: { timestamp: params.timestamp },
       };
     },
@@ -383,7 +383,7 @@ export function getPendingSummaryTool(getScheduler: () => Scheduler) {
     async execute(_toolCallId: string) {
       const summary = getScheduler().getPendingSummary();
       return {
-        content: [{ type: 'text', text: `${summary.count} pending. ${JSON.stringify(summary.byAutomation, null, 2)}` }],
+        content: [{ type: 'text' as const, text: `${summary.count} pending. ${JSON.stringify(summary.byAutomation, null, 2)}` }],
         details: summary,
       };
     },
@@ -407,7 +407,7 @@ export function setWebhookTool(getScheduler: () => Scheduler) {
     async execute(toolCallId: string, params: any) {
       getScheduler().setWebhookUrl(params.url);
       return {
-        content: [{ type: 'text', text: `Webhook set to ${params.url}` }],
+        content: [{ type: 'text' as const, text: `Webhook set to ${params.url}` }],
         details: { url: params.url },
       };
     },

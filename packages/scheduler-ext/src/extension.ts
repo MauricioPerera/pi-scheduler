@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { homedir } from 'node:os';
-import { Scheduler } from '@earendil-works/pi-scheduler-core';
+import { Scheduler } from 'pi-scheduler-core';
 import type { ExtensionFactory, ExtensionContext, ExtensionCommandContext } from '@earendil-works/pi-coding-agent';
 import {
   createAutomationTool,

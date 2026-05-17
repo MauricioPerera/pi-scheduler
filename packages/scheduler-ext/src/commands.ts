@@ -1,4 +1,4 @@
-import type { Scheduler } from '@earendil-works/pi-scheduler-core';
+import type { Scheduler } from 'pi-scheduler-core';
 import type { ExtensionCommandContext } from '@earendil-works/pi-coding-agent';
 
 // ---------------------------------------------------------------------------

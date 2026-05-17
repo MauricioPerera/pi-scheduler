@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Template } from '@earendil-works/pi-scheduler-core';
+import type { Template } from 'pi-scheduler-core';
 
 // ---------------------------------------------------------------------------
 // Skill Template Loader

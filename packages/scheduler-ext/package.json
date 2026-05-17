@@ -1,5 +1,5 @@
 {
-  "name": "@earendil-works/pi-scheduler-ext",
+  "name": "pi-scheduler-ext",
   "version": "0.1.0",
   "description": "Extension pi-coding-agent para pi-scheduler-core",
   "type": "module",
@@ -27,7 +27,7 @@
     "@earendil-works/pi-coding-agent": "^0.74.0"
   },
   "dependencies": {
-    "@earendil-works/pi-scheduler-core": "^0.1.0"
+    "pi-scheduler-core": "^0.1.0"
   },
   "license": "MIT",
   "engines": {

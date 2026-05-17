@@ -9,7 +9,7 @@ import type {
   ExecutionLog,
   Notification,
   Template,
-} from '@earendil-works/pi-scheduler-core';
+} from 'pi-scheduler-core';
 
 export type { Scheduler, Automation, Task, ExecutionLog, Notification, Template };
 

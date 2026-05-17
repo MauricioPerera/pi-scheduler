@@ -1,5 +1,5 @@
 {
-  "name": "@earendil-works/pi-scheduler-core",
+  "name": "pi-scheduler-core",
   "version": "0.1.0",
   "description": "Motor de scheduling persistente para agentes de IA. Zero dependencies.",
   "type": "module",

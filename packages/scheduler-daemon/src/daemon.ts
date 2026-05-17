@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { Scheduler } from '@earendil-works/pi-scheduler-core';
+import { Scheduler } from 'pi-scheduler-core';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { writeFileSync, mkdirSync, existsSync, unlinkSync, readFileSync } from 'node:fs';
