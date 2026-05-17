@@ -1,4 +1,4 @@
-import { exec } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import type { Automation, Task } from './types.js';
 import { resolveCommand } from './store.js';
 
@@ -12,6 +12,9 @@ export interface ExecutionResult {
   stderr: string;
 }
 
+// Cap per stream to avoid OOM when a command produces large output.
+const MAX_OUTPUT_BYTES = 4 * 1024 * 1024; // 4 MB
+
 export function executeCommand(
   item: Automation | Task,
   scriptsDir: string,
@@ -21,24 +24,60 @@ export function executeCommand(
   const { command, cwd } = resolveCommand(item, scriptsDir);
 
   return new Promise((resolve) => {
-    const child = exec(command, { cwd, timeout: timeoutMs }, (error, stdout, stderr) => {
-      const exitCode = error ? (error.code ?? -1) : 0;
-      resolve({
-        exitCode,
-        stdout: stdout ?? '',
-        stderr: stderr ?? '',
-      });
+    const child = spawn(command, [], { cwd, shell: true });
+
+    const stdoutChunks: Buffer[] = [];
+    const stderrChunks: Buffer[] = [];
+    let stdoutSize = 0;
+    let stderrSize = 0;
+    let stdoutTruncated = false;
+    let stderrTruncated = false;
+
+    child.stdout.on('data', (chunk: Buffer) => {
+      if (stdoutSize < MAX_OUTPUT_BYTES) {
+        stdoutChunks.push(chunk);
+        stdoutSize += chunk.length;
+        if (stdoutSize >= MAX_OUTPUT_BYTES) stdoutTruncated = true;
+      }
     });
 
+    child.stderr.on('data', (chunk: Buffer) => {
+      if (stderrSize < MAX_OUTPUT_BYTES) {
+        stderrChunks.push(chunk);
+        stderrSize += chunk.length;
+        if (stderrSize >= MAX_OUTPUT_BYTES) stderrTruncated = true;
+      }
+    });
+
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill();
+    }, timeoutMs);
+
+    const onAbort = () => child.kill();
     if (signal) {
-      const onAbort = () => {
-        child.kill();
-      };
       if (signal.aborted) {
         onAbort();
       } else {
         signal.addEventListener('abort', onAbort, { once: true });
       }
     }
+
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      if (signal) signal.removeEventListener('abort', onAbort);
+
+      let stdout = Buffer.concat(stdoutChunks).toString('utf8');
+      let stderr = Buffer.concat(stderrChunks).toString('utf8');
+      if (stdoutTruncated) stdout += '\n[output truncated at 4 MB]';
+      if (stderrTruncated) stderr += '\n[output truncated at 4 MB]';
+
+      resolve({
+        exitCode: timedOut ? -1 : (code ?? -1),
+        stdout,
+        stderr,
+      });
+    });
   });
 }

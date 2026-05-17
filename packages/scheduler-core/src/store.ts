@@ -42,7 +42,9 @@ export function loadAutomations(filePath: string): Map<string, Automation> {
   try {
     const data = JSON.parse(readFileSync(filePath, 'utf8')) as Automation[];
     for (const a of data) map.set(a.id, a);
-  } catch {}
+  } catch (err) {
+    console.error(`[pi-scheduler] Failed to parse automations from ${filePath}:`, err);
+  }
   return map;
 }
 
@@ -52,7 +54,9 @@ export function loadTasks(filePath: string): Map<string, Task> {
   try {
     const data = JSON.parse(readFileSync(filePath, 'utf8')) as Task[];
     for (const t of data) map.set(t.id, t);
-  } catch {}
+  } catch (err) {
+    console.error(`[pi-scheduler] Failed to parse tasks from ${filePath}:`, err);
+  }
   return map;
 }
 
@@ -60,7 +64,8 @@ export function loadConfig(filePath: string): Record<string, unknown> {
   if (!existsSync(filePath)) return {};
   try {
     return JSON.parse(readFileSync(filePath, 'utf8'));
-  } catch {
+  } catch (err) {
+    console.error(`[pi-scheduler] Failed to parse config from ${filePath}:`, err);
     return {};
   }
 }
