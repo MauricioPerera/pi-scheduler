@@ -76,12 +76,13 @@ describe('Scheduler', () => {
     });
 
     it('throws on blocked cwd', () => {
+      const blockedPath = process.platform === 'win32' ? 'C:/Windows' : '/etc';
       expect(() =>
         scheduler.createAutomation({
           name: 'Bad',
           intervalMinutes: 5,
           command: 'echo hi',
-          cwd: 'C:/Windows',
+          cwd: blockedPath,
         })
       ).toThrow(/Working directory blocked/);
     });

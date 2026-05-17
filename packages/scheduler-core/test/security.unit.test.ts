@@ -87,7 +87,8 @@ describe('Security', () => {
     });
 
     it('blocks system directories', () => {
-      const r = validateCwd('C:/Windows');
+      const blockedPath = process.platform === 'win32' ? 'C:/Windows' : '/etc';
+      const r = validateCwd(blockedPath);
       expect(r.ok).toBe(false);
     });
 
