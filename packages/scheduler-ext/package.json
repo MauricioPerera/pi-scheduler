@@ -1,6 +1,6 @@
 {
   "name": "pi-scheduler-ext",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "Extension pi-coding-agent para pi-scheduler-core",
   "type": "module",
   "main": "./dist/index.js",
@@ -27,7 +27,7 @@
     "@earendil-works/pi-coding-agent": "^0.74.0"
   },
   "dependencies": {
-    "pi-scheduler-core": "^0.1.2"
+    "pi-scheduler-core": "^0.2.0"
   },
   "license": "MIT",
   "engines": {
