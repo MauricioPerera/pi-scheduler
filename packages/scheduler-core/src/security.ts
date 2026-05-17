@@ -20,6 +20,7 @@ const COMMAND_BLOCKLIST_SUBSTRINGS = [
   'shutdown /s',
   'shutdown -h',
   'reg delete',
+  'remove-item -recurse',
 ];
 
 const COMMAND_BLOCKLIST_WORDS = [
@@ -31,7 +32,7 @@ const COMMAND_BLOCKLIST_WORDS = [
 
 export function validateCommand(command: string | undefined): ValidationResult {
   if (!command) return { ok: true };
-  const lower = command.toLowerCase();
+  const lower = command.toLowerCase().replace(/\s+/g, ' ');
   for (const pattern of COMMAND_BLOCKLIST_SUBSTRINGS) {
     if (lower.includes(pattern)) {
       return { ok: false, reason: 'Command blocked by security policy: dangerous pattern detected' };
@@ -76,11 +77,13 @@ const SCRIPT_BLOCKLIST_WORDS = [
   'mkfs',
   'curl',
   'wget',
+  'rmsync',
+  'rmdirsync',
 ];
 
 export function validateScript(script: string | undefined): ValidationResult {
   if (!script) return { ok: true };
-  const lower = script.toLowerCase();
+  const lower = script.toLowerCase().replace(/\s+/g, ' ');
   for (const pattern of SCRIPT_BLOCKLIST_SUBSTRINGS) {
     if (lower.includes(pattern)) {
       return { ok: false, reason: 'Script blocked by security policy: dangerous pattern detected' };
@@ -145,6 +148,10 @@ export function validateCwd(
 export function validateTask(args: TaskArgs, extraDirs?: string[]): ValidationResult {
   const cmdResult = validateCommand(args.command);
   if (!cmdResult.ok) return cmdResult;
+  // Also apply script-level pattern checks to commands, catching inline
+  // python -c / node -e / powershell -Command with dangerous code.
+  const cmdInlineResult = validateScript(args.command);
+  if (!cmdInlineResult.ok) return cmdInlineResult;
   const scriptResult = validateScript(args.script);
   if (!scriptResult.ok) return scriptResult;
   const cwdResult = validateCwd(args.cwd, extraDirs);

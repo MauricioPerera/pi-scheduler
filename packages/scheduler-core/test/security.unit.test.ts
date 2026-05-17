@@ -40,6 +40,19 @@ describe('Security', () => {
     it('allows undefined', () => {
       expect(validateCommand(undefined).ok).toBe(true);
     });
+
+    it('blocks rm -rf / with extra whitespace', () => {
+      expect(validateCommand('rm  -rf /').ok).toBe(false);
+      expect(validateCommand('rm\t-rf /').ok).toBe(false);
+    });
+
+    it('blocks bash -c with dangerous inner command', () => {
+      expect(validateCommand('bash -c "rm -rf /"').ok).toBe(false);
+    });
+
+    it('blocks remove-item -recurse', () => {
+      expect(validateCommand('powershell -Command "Remove-Item -Recurse -Force C:\\"').ok).toBe(false);
+    });
   });
 
   describe('validateScript', () => {
@@ -51,6 +64,11 @@ describe('Security', () => {
       expect(validateScript('rm -rf /').ok).toBe(false);
       expect(validateScript('os.system("rm -rf /")').ok).toBe(false);
       expect(validateScript('shutil.rmtree("/")').ok).toBe(false);
+    });
+
+    it('blocks dangerous patterns with extra whitespace', () => {
+      expect(validateScript('shutil.rmtree( "/")').ok).toBe(false);
+      expect(validateScript('os.system( "rm  -rf /")').ok).toBe(false);
     });
   });
 
@@ -90,6 +108,18 @@ describe('Security', () => {
     it('fails on dangerous command', () => {
       const r = validateTask({ command: 'rm -rf /' });
       expect(r.ok).toBe(false);
+    });
+
+    it('blocks inline python dangerous code in command', () => {
+      expect(validateTask({ command: 'python -c "import shutil; shutil.rmtree(\'/\')"' }).ok).toBe(false);
+    });
+
+    it('blocks inline node dangerous code in command', () => {
+      expect(validateTask({ command: "node -e \"require('fs').rmSync('/', {recursive: true})\"" }).ok).toBe(false);
+    });
+
+    it('blocks powershell Remove-Item in command', () => {
+      expect(validateTask({ command: 'powershell -Command "Remove-Item -Recurse -Force C:\\"' }).ok).toBe(false);
     });
   });
 
