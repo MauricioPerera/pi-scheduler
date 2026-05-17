@@ -19,6 +19,19 @@ export type SubagentExecutor = (
   cwd: string
 ) => Promise<{ exitCode: number; stdout: string; stderr: string }>;
 
+// ---------------------------------------------------------------------------
+// Storage Adapter
+// ---------------------------------------------------------------------------
+
+export interface StorageAdapter {
+  loadAutomations(): Map<string, Automation>;
+  saveAutomations(map: Map<string, Automation>): void;
+  loadTasks(): Map<string, Task>;
+  saveTasks(map: Map<string, Task>): void;
+  loadConfig(): Record<string, unknown>;
+  saveConfig(config: Record<string, unknown>): void;
+}
+
 export interface SchedulerOptions {
   dataDir?: string;
   tickIntervalMs?: number;
@@ -26,6 +39,7 @@ export interface SchedulerOptions {
   allowedDirs?: string[];
   logger?: Logger;
   subagentExecutor?: SubagentExecutor;
+  storageAdapter?: StorageAdapter;
 }
 
 export interface Logger {

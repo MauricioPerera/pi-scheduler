@@ -25,6 +25,7 @@ export {
 } from './tools.js';
 export { schedulerCommandHandler } from './commands.js';
 export { loadSkillTemplates, parsedTemplateToCoreTemplate } from './skill-loader.js';
+export { SqliteStorageAdapter } from './sqlite-adapter.js';
 
 import { schedulerExtension as _schedulerExtension } from './extension.js';
 

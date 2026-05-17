@@ -1,4 +1,4 @@
-import { writeFileSync, renameSync, unlinkSync } from 'node:fs';
+import { writeFileSync, readFileSync, renameSync, unlinkSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -30,8 +30,49 @@ export function atomicWrite(filePath: string, content: string): void {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Cross-process File Lock
+// ---------------------------------------------------------------------------
+
+function isProcessAlive(pid: number): boolean {
+  try { process.kill(pid, 0); return true; } catch { return false; }
+}
+
+export function withFileLock<T>(filePath: string, fn: () => T): T {
+  const lockPath = filePath + '.lock';
+  const maxRetries = 20;
+  const retryMs = 50;
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      writeFileSync(lockPath, String(process.pid), { flag: 'wx' });
+      try {
+        return fn();
+      } finally {
+        try { unlinkSync(lockPath); } catch {}
+      }
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code !== 'EEXIST') throw err;
+
+      // Stale lock detection: steal if the owning process is dead
+      try {
+        const rawPid = parseInt(readFileSync(lockPath, 'utf8'), 10);
+        if (!isNaN(rawPid) && !isProcessAlive(rawPid)) {
+          try { unlinkSync(lockPath); } catch {}
+          continue;
+        }
+      } catch {}
+
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, retryMs);
+    }
+  }
+
+  console.error(`[pi-scheduler] Could not acquire file lock for ${filePath}, proceeding without lock`);
+  return fn();
+}
+
 export function safeWrite(filePath: string, content: string): void {
-  try { atomicWrite(filePath, content); } catch {}
+  try { withFileLock(filePath, () => atomicWrite(filePath, content)); } catch {}
 }
 
 // ---------------------------------------------------------------------------

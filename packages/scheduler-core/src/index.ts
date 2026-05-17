@@ -26,15 +26,17 @@ export type {
   SchedulerEventHandler,
   SubagentConfig,
   SubagentExecutor,
+  StorageAdapter,
 } from './types.js';
 export { validateTask, validateCommand, validateScript, validateCwd, validateInterpolationValue } from './security.js';
 export { BUILTIN_TEMPLATES, interpolateTemplate, instantiateTemplateOptions } from './templates.js';
-export { generateId, atomicWrite, safeWrite, resolveDataDir, noopLogger } from './utils.js';
+export { generateId, atomicWrite, safeWrite, withFileLock, resolveDataDir, noopLogger } from './utils.js';
 export {
   getStorePaths, ensureStoreDirs,
   loadAutomations, loadTasks, loadConfig,
   saveAutomations, saveTasks, saveConfig,
   getScriptExt, getScriptRunner, resolveCommand, deleteScriptFile,
+  JsonStorageAdapter,
 } from './store.js';
 export {
   loadNotificationsState, saveNotificationsState,

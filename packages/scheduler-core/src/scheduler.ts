@@ -19,13 +19,13 @@ import type {
   ValidationResult,
   TaskArgs,
   SubagentExecutor,
+  StorageAdapter,
 } from './types.js';
 import { generateId, noopLogger } from './utils.js';
 import { validateTask } from './security.js';
 import { BUILTIN_TEMPLATES, instantiateTemplateOptions } from './templates.js';
 import {
-  getStorePaths, ensureStoreDirs, loadAutomations, loadTasks, loadConfig,
-  saveAutomations, saveTasks, saveConfig, deleteScriptFile,
+  getStorePaths, ensureStoreDirs, JsonStorageAdapter, deleteScriptFile,
 } from './store.js';
 import {
   loadNotificationsState, saveNotificationsState,
@@ -40,6 +40,7 @@ import { executeCommand } from './executor.js';
 
 export class Scheduler {
   private readonly paths: ReturnType<typeof getStorePaths>;
+  private readonly store: StorageAdapter;
   private readonly automations: Map<string, Automation>;
   private readonly tasks: Map<string, Task>;
   private readonly templates: Template[];
@@ -65,9 +66,10 @@ export class Scheduler {
 
     ensureStoreDirs(this.paths);
 
-    this.automations = loadAutomations(this.paths.automationsFile);
-    this.tasks = loadTasks(this.paths.tasksFile);
-    this.config = loadConfig(this.paths.configFile);
+    this.store = options.storageAdapter ?? new JsonStorageAdapter(this.paths);
+    this.automations = this.store.loadAutomations();
+    this.tasks = this.store.loadTasks();
+    this.config = this.store.loadConfig();
     this.lastAck = loadNotificationsState(this.paths.lastAckFile).lastAck;
 
     // Recover tasks that were running when the process last died
@@ -82,7 +84,7 @@ export class Scheduler {
       }
     }
     if (hadOrphanedTasks) {
-      saveTasks(this.paths.tasksFile, this.tasks);
+      this.store.saveTasks(this.tasks);
     }
 
     if (options.webhookUrl) {
@@ -135,7 +137,7 @@ export class Scheduler {
       if (now >= a.nextRun && !this.runningAutomations.has(a.id)) {
         this.runningAutomations.add(a.id);
         a.nextRun = now + a.intervalMinutes * 60 * 1000;
-        saveAutomations(this.paths.automationsFile, this.automations);
+        this.store.saveAutomations(this.automations);
         this.runAutomation(a).finally(() => {
           this.runningAutomations.delete(a.id);
         }).catch((err) => {
@@ -158,7 +160,7 @@ export class Scheduler {
       };
       automation.logs.push(log);
       if (automation.logs.length > 100) automation.logs.shift();
-      saveAutomations(this.paths.automationsFile, this.automations);
+      this.store.saveAutomations(this.automations);
 
       const notification: Notification = {
         type: 'automation_run',
@@ -215,7 +217,7 @@ export class Scheduler {
     };
 
     this.automations.set(id, automation);
-    saveAutomations(this.paths.automationsFile, this.automations);
+    this.store.saveAutomations(this.automations);
     return automation;
   }
 
@@ -234,7 +236,7 @@ export class Scheduler {
       deleteScriptFile(id, a.scriptType, this.paths.scriptsDir);
     }
     this.automations.delete(id);
-    saveAutomations(this.paths.automationsFile, this.automations);
+    this.store.saveAutomations(this.automations);
     return true;
   }
 
@@ -285,7 +287,7 @@ export class Scheduler {
     };
 
     this.tasks.set(id, task);
-    saveTasks(this.paths.tasksFile, this.tasks);
+    this.store.saveTasks(this.tasks);
 
     const timeoutMs = options.timeoutMs ?? 300000;
     const execPromise = task.subagentConfig && this.subagentExecutor
@@ -299,7 +301,7 @@ export class Scheduler {
         task.exitCode = result.exitCode;
         task.stdout = result.stdout;
         task.stderr = result.stderr;
-        saveTasks(this.paths.tasksFile, this.tasks);
+        this.store.saveTasks(this.tasks);
 
         const notification: Notification = {
           type: 'task_run',
@@ -321,7 +323,7 @@ export class Scheduler {
         task.completedAt = new Date().toISOString();
         task.exitCode = -1;
         task.stderr = String(err);
-        saveTasks(this.paths.tasksFile, this.tasks);
+        this.store.saveTasks(this.tasks);
 
         this.emit('error', { message: String(err), taskId: id });
       });
@@ -344,7 +346,7 @@ export class Scheduler {
       deleteScriptFile(id, t.scriptType, this.paths.scriptsDir);
     }
     this.tasks.delete(id);
-    saveTasks(this.paths.tasksFile, this.tasks);
+    this.store.saveTasks(this.tasks);
     return true;
   }
 
@@ -370,7 +372,9 @@ export class Scheduler {
     this.emit('notification', notification);
     const url = this.config.webhookUrl as string | undefined;
     if (url) {
-      sendHttpNotification(url, notification);
+      sendHttpNotification(url, notification).catch((err) => {
+        this.logger.error(`Webhook error: ${err}`);
+      });
     }
   }
 
@@ -423,7 +427,7 @@ export class Scheduler {
 
   setWebhookUrl(url: string): void {
     this.config.webhookUrl = url;
-    saveConfig(this.paths.configFile, this.config);
+    this.store.saveConfig(this.config);
   }
 
   // ---------------------------------------------------------------------------
@@ -431,9 +435,9 @@ export class Scheduler {
   // ---------------------------------------------------------------------------
 
   flush(): void {
-    saveAutomations(this.paths.automationsFile, this.automations);
-    saveTasks(this.paths.tasksFile, this.tasks);
-    saveConfig(this.paths.configFile, this.config);
+    this.store.saveAutomations(this.automations);
+    this.store.saveTasks(this.tasks);
+    this.store.saveConfig(this.config);
     saveNotificationsState(this.paths.lastAckFile, { lastAck: this.lastAck });
   }
 

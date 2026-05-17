@@ -103,35 +103,59 @@ function maybeRotate(filePath: string): void {
 }
 
 // ---------------------------------------------------------------------------
-// HTTP Webhook
+// HTTP Webhook (with retry + timeout)
 // ---------------------------------------------------------------------------
 
 import { request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 
-export function sendHttpNotification(url: string, record: Notification): void {
+export async function sendHttpNotification(
+  url: string,
+  record: Notification,
+  maxRetries = 3,
+): Promise<void> {
   if (!url) return;
-  try {
-    const body = JSON.stringify(record);
-    const u = new URL(url);
-    const client = u.protocol === 'https:' ? httpsRequest : httpRequest;
-    const req = client(
-      {
-        hostname: u.hostname,
-        port: u.port || (u.protocol === 'https:' ? '443' : '80'),
-        path: u.pathname + u.search,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(body),
-        },
-      },
-      () => {}
-    );
-    req.on('error', () => {});
-    req.write(body);
-    req.end();
-  } catch {
-    // silently fail
+
+  let u: URL;
+  try { u = new URL(url); } catch { return; }
+
+  const body = JSON.stringify(record);
+  const client = u.protocol === 'https:' ? httpsRequest : httpRequest;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    if (attempt > 0) {
+      await new Promise<void>((resolve) => setTimeout(resolve, 1000 * Math.pow(2, attempt - 1)));
+    }
+
+    const success = await new Promise<boolean>((resolve) => {
+      try {
+        const req = client(
+          {
+            hostname: u.hostname,
+            port: u.port || (u.protocol === 'https:' ? '443' : '80'),
+            path: u.pathname + u.search,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(body),
+            },
+          },
+          (res) => {
+            res.resume();
+            resolve(res.statusCode !== undefined && res.statusCode < 500);
+          }
+        );
+        req.on('error', () => resolve(false));
+        req.setTimeout(5000, () => { req.destroy(); resolve(false); });
+        req.write(body);
+        req.end();
+      } catch {
+        resolve(false);
+      }
+    });
+
+    if (success) return;
   }
+
+  console.error(`[pi-scheduler] Webhook delivery failed after ${maxRetries} attempts: ${url}`);
 }

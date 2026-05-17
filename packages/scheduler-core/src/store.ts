@@ -2,7 +2,7 @@ import {
   existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync,
 } from 'node:fs';
 import { join } from 'node:path';
-import type { Automation, Task } from './types.js';
+import type { Automation, Task, StorageAdapter } from './types.js';
 import { safeWrite, resolveDataDir } from './utils.js';
 
 // ---------------------------------------------------------------------------
@@ -117,5 +117,20 @@ export function deleteScriptFile(id: string, scriptType: string, scriptsDir: str
   const ext = getScriptExt(scriptType);
   const path = join(scriptsDir, id + ext);
   try { unlinkSync(path); } catch {}
+}
+
+// ---------------------------------------------------------------------------
+// JsonStorageAdapter
+// ---------------------------------------------------------------------------
+
+export class JsonStorageAdapter implements StorageAdapter {
+  constructor(private readonly paths: ReturnType<typeof getStorePaths>) {}
+
+  loadAutomations(): Map<string, Automation> { return loadAutomations(this.paths.automationsFile); }
+  saveAutomations(map: Map<string, Automation>): void { saveAutomations(this.paths.automationsFile, map); }
+  loadTasks(): Map<string, Task> { return loadTasks(this.paths.tasksFile); }
+  saveTasks(map: Map<string, Task>): void { saveTasks(this.paths.tasksFile, map); }
+  loadConfig(): Record<string, unknown> { return loadConfig(this.paths.configFile); }
+  saveConfig(config: Record<string, unknown>): void { saveConfig(this.paths.configFile, config); }
 }
 
