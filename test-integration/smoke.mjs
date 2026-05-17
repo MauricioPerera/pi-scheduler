@@ -149,10 +149,14 @@ assert('C:/Windows cwd blocked', blockedCwd);
 console.log('\n5. Templates');
 
 const templates = scheduler2.listTemplates();
-assert('8 built-in templates', templates.length === 8, String(templates.length));
+assert('11 built-in templates', templates.length === 11, String(templates.length));
 
 const ids = templates.map((t) => t.id);
-for (const expected of ['build-project', 'disk-check', 'git-sync', 'npm-test', 'npm-outdated', 'memory-check', 'service-ping', 'git-log']) {
+for (const expected of [
+  'build-project', 'disk-check', 'git-sync', 'npm-test', 'npm-outdated',
+  'memory-check', 'service-ping', 'git-log',
+  'nightly-review', 'daily-research', 'weekly-audit',
+]) {
   assert(`template ${expected} present`, ids.includes(expected));
 }
 
