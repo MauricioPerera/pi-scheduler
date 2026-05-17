@@ -6,6 +6,7 @@
  */
 
 import { Scheduler } from '../packages/scheduler-core/dist/index.js';
+import { createSubagentExecutor } from '../packages/scheduler-ext/dist/subagent-executor.js';
 import { mkdirSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -159,6 +160,67 @@ for (const expected of [
 ]) {
   assert(`template ${expected} present`, ids.includes(expected));
 }
+
+// ---------------------------------------------------------------------------
+// 6. Subagent template execution (reviewer via claude CLI)
+// ---------------------------------------------------------------------------
+
+console.log('\n6. Subagent template execution');
+
+const subagentDataDir = join(tmpdir(), `pi-scheduler-smoke-subagent-${Date.now()}`);
+mkdirSync(subagentDataDir, { recursive: true });
+
+const schedulerWithSubagent = Scheduler.create({
+  dataDir: subagentDataDir,
+  allowedDirs: [tmpdir()],
+  subagentExecutor: createSubagentExecutor(60000),
+});
+
+const subagentTask = schedulerWithSubagent.runTask({
+  name: 'reviewer-smoke',
+  cwd: tmpdir(),
+  subagentConfig: {
+    agent: 'reviewer',
+    task: 'Review this single line of code and respond with exactly: REVIEW_OK\n\nCode: const x = 1 + 1;',
+  },
+  timeoutMs: 60000,
+});
+
+assert('subagent task started as running', subagentTask.status === 'running');
+console.log(`  ${INFO} waiting for subagent (reviewer) response...`);
+
+await new Promise((r) => setTimeout(r, 30000));
+const subagentResult = schedulerWithSubagent.getTaskStatus(subagentTask.id);
+
+assert('subagent task completed', subagentResult?.status === 'completed', subagentResult?.status);
+assert('subagent exitCode 0', subagentResult?.exitCode === 0, String(subagentResult?.exitCode));
+assert('subagent stdout non-empty', (subagentResult?.stdout?.trim().length ?? 0) > 0, JSON.stringify(subagentResult?.stdout?.trim()));
+
+// Chain execution: scout → reviewer
+const chainTask = schedulerWithSubagent.runTask({
+  name: 'chain-smoke',
+  cwd: tmpdir(),
+  subagentConfig: {
+    chain: [
+      { agent: 'scout', task: 'List exactly three words that describe good code. Nothing else.' },
+      { agent: 'reviewer', task: 'Take the three words from context and respond with: CHAIN_OK followed by those words.' },
+    ],
+  },
+  timeoutMs: 90000,
+});
+
+assert('chain task started as running', chainTask.status === 'running');
+console.log(`  ${INFO} waiting for chain (scout → reviewer) response...`);
+
+await new Promise((r) => setTimeout(r, 60000));
+const chainResult = schedulerWithSubagent.getTaskStatus(chainTask.id);
+
+assert('chain task completed', chainResult?.status === 'completed', chainResult?.status);
+assert('chain exitCode 0', chainResult?.exitCode === 0, String(chainResult?.exitCode));
+assert('chain stdout non-empty', (chainResult?.stdout?.trim().length ?? 0) > 0, JSON.stringify(chainResult?.stdout?.trim()));
+
+schedulerWithSubagent.stop();
+rmSync(subagentDataDir, { recursive: true, force: true });
 
 // ---------------------------------------------------------------------------
 // Teardown
