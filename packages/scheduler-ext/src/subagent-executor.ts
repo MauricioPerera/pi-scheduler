@@ -71,7 +71,13 @@ function spawnClaude(
     });
 
     child.on('close', (code) => finish(code ?? -1));
-    child.on('error', () => finish(-1));
+    child.on('error', (err) => {
+      const isNotFound = (err as NodeJS.ErrnoException).code === 'ENOENT';
+      stderrBuf = isNotFound
+        ? 'claude CLI not found in PATH. Install with: npm install -g @anthropic-ai/claude-code'
+        : String(err);
+      finish(-1);
+    });
 
     const timer = setTimeout(() => { child.kill(); finish(-1); }, timeoutMs);
   });

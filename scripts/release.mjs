@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { execSync } from 'node:child_process';
 
-const packages = ['scheduler-core', 'scheduler-ext'];
+const packages = ['scheduler-core', 'scheduler-ext', 'scheduler-daemon'];
 const rootDir = process.cwd();
 
 function readJson(path) {
@@ -38,8 +38,8 @@ function main() {
     const pkgPath = join(rootDir, 'packages', pkg, 'package.json');
     const data = readJson(pkgPath);
     data.version = newVersion;
-    if (data.dependencies?.['@earendil-works/pi-scheduler-core']) {
-      data.dependencies['@earendil-works/pi-scheduler-core'] = `^${newVersion}`;
+    if (data.dependencies?.['pi-scheduler-core']) {
+      data.dependencies['pi-scheduler-core'] = `^${newVersion}`;
     }
     writeJson(pkgPath, data);
     console.log(`  ${pkg}: ${newVersion}`);
