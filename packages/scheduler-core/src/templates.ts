@@ -14,6 +14,7 @@ export const BUILTIN_TEMPLATES: Template[] = [
     scriptType: null,
     command: 'dotnet build',
     script: null,
+    subagentConfig: null,
     requiredParams: [],
   },
   {
@@ -24,6 +25,7 @@ export const BUILTIN_TEMPLATES: Template[] = [
     scriptType: null,
     command: "powershell -Command \"Get-PSDrive C | Select-Object Used,Free\"",
     script: null,
+    subagentConfig: null,
     requiredParams: [],
   },
   {
@@ -34,6 +36,7 @@ export const BUILTIN_TEMPLATES: Template[] = [
     scriptType: null,
     command: 'git pull',
     script: null,
+    subagentConfig: null,
     requiredParams: [],
   },
   {
@@ -44,6 +47,7 @@ export const BUILTIN_TEMPLATES: Template[] = [
     scriptType: null,
     command: 'npm test',
     script: null,
+    subagentConfig: null,
     requiredParams: [],
   },
   {
@@ -54,6 +58,7 @@ export const BUILTIN_TEMPLATES: Template[] = [
     scriptType: null,
     command: 'npm outdated',
     script: null,
+    subagentConfig: null,
     requiredParams: [],
   },
   {
@@ -64,6 +69,7 @@ export const BUILTIN_TEMPLATES: Template[] = [
     scriptType: null,
     command: 'powershell -Command "Get-Process | Sort-Object WorkingSet -Descending | Select-Object -First 5 -Property Name,WorkingSet"',
     script: null,
+    subagentConfig: null,
     requiredParams: [],
   },
   {
@@ -74,6 +80,7 @@ export const BUILTIN_TEMPLATES: Template[] = [
     scriptType: null,
     command: 'powershell -Command "Test-NetConnection -ComputerName ${host} -Port ${port}"',
     script: null,
+    subagentConfig: null,
     requiredParams: ['host', 'port'],
   },
   {
@@ -84,6 +91,40 @@ export const BUILTIN_TEMPLATES: Template[] = [
     scriptType: null,
     command: 'git log --oneline -10',
     script: null,
+    subagentConfig: null,
+    requiredParams: [],
+  },
+  {
+    id: 'nightly-review',
+    name: 'Nightly code review',
+    description: 'Run a reviewer subagent on uncommitted changes and open PRs every night.',
+    defaultInterval: 1440,
+    scriptType: null,
+    command: null,
+    script: null,
+    subagentConfig: { agent: 'reviewer', task: 'Review all uncommitted changes and recently merged PRs. Identify issues, risks, and improvements. Be concise.' },
+    requiredParams: [],
+  },
+  {
+    id: 'daily-research',
+    name: 'Daily dependency research',
+    description: 'Run a researcher subagent to check for new versions of key dependencies.',
+    defaultInterval: 1440,
+    scriptType: null,
+    command: null,
+    script: null,
+    subagentConfig: { agent: 'researcher', task: 'Check for new major or minor releases of the project dependencies listed in package.json. Summarize what changed and whether an upgrade is recommended.' },
+    requiredParams: [],
+  },
+  {
+    id: 'weekly-audit',
+    name: 'Weekly code audit',
+    description: 'Run an oracle subagent for a weekly independent code quality and drift audit.',
+    defaultInterval: 10080,
+    scriptType: null,
+    command: null,
+    script: null,
+    subagentConfig: { agent: 'oracle', task: 'Audit the codebase for quality issues, architectural drift, dead code, and security concerns. Provide a prioritized list of recommendations.' },
     requiredParams: [],
   },
 ];
@@ -150,5 +191,6 @@ export function instantiateTemplateOptions(
     command: interp.command ?? undefined,
     script: interp.script ?? undefined,
     scriptType: template.scriptType ?? 'javascript',
+    subagentConfig: template.subagentConfig ?? undefined,
   };
 }

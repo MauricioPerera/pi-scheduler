@@ -2,6 +2,7 @@ import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { Scheduler } from 'pi-scheduler-core';
 import type { ExtensionFactory, ExtensionContext, ExtensionCommandContext } from '@earendil-works/pi-coding-agent';
+import { createSubagentExecutor } from './subagent-executor.js';
 import {
   createAutomationTool,
   listAutomationsTool,
@@ -17,6 +18,7 @@ import {
   ackNotificationsTool,
   getPendingSummaryTool,
   setWebhookTool,
+  createSubagentAutomationTool,
 } from './tools.js';
 import { schedulerCommandHandler } from './commands.js';
 import { loadSkillTemplates, parsedTemplateToCoreTemplate } from './skill-loader.js';
@@ -51,6 +53,7 @@ export const schedulerExtension: ExtensionFactory = async (api) => {
   api.registerTool(ackNotificationsTool(getScheduler));
   api.registerTool(getPendingSummaryTool(getScheduler));
   api.registerTool(setWebhookTool(getScheduler));
+  api.registerTool(createSubagentAutomationTool(getScheduler));
 
   // Register slash command
   api.registerCommand('/scheduler', {
@@ -68,6 +71,7 @@ export const schedulerExtension: ExtensionFactory = async (api) => {
     scheduler = Scheduler.create({
       dataDir,
       allowedDirs,
+      subagentExecutor: createSubagentExecutor(),
       logger: {
         info: (m) => console.log(`[scheduler] ${m}`),
         warn: (m) => console.warn(`[scheduler] ${m}`),

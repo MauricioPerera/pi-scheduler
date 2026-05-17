@@ -24,6 +24,8 @@ export type {
   SchedulerEventMap,
   SchedulerEventName,
   SchedulerEventHandler,
+  SubagentConfig,
+  SubagentExecutor,
 } from './types.js';
 export { validateTask, validateCommand, validateScript, validateCwd, validateInterpolationValue } from './security.js';
 export { BUILTIN_TEMPLATES, interpolateTemplate, instantiateTemplateOptions } from './templates.js';

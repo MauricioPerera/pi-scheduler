@@ -139,6 +139,7 @@ export function parsedTemplateToCoreTemplate(parsed: ParsedTemplate): Template {
     scriptType: parsed.scriptType,
     command: parsed.command,
     script: parsed.script,
+    subagentConfig: null,
     requiredParams: parsed.requiredParams,
   };
 }

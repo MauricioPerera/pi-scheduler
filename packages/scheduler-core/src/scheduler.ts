@@ -18,6 +18,7 @@ import type {
   SchedulerEventHandler,
   ValidationResult,
   TaskArgs,
+  SubagentExecutor,
 } from './types.js';
 import { generateId, noopLogger } from './utils.js';
 import { validateTask } from './security.js';
@@ -48,6 +49,7 @@ export class Scheduler {
   private readonly logger: Logger;
   private readonly allowedDirs: string[];
   private readonly listeners = new Map<SchedulerEventName, Set<SchedulerEventHandler<SchedulerEventName>>>();
+  private readonly subagentExecutor: SubagentExecutor | undefined;
   private running = false;
   private runningAutomations = new Set<string>();
 
@@ -59,6 +61,7 @@ export class Scheduler {
     this.paths = getStorePaths(options.dataDir);
     this.logger = options.logger ?? noopLogger;
     this.allowedDirs = options.allowedDirs ?? [];
+    this.subagentExecutor = options.subagentExecutor;
 
     ensureStoreDirs(this.paths);
 
@@ -144,7 +147,9 @@ export class Scheduler {
 
   private async runAutomation(automation: Automation): Promise<void> {
     try {
-      const result = await executeCommand(automation, this.paths.scriptsDir, 120000);
+      const result = automation.subagentConfig && this.subagentExecutor
+        ? await this.subagentExecutor(automation.subagentConfig, automation.cwd)
+        : await executeCommand(automation, this.paths.scriptsDir, 120000);
       const log: ExecutionLog = {
         time: new Date().toISOString(),
         exitCode: result.exitCode,
@@ -189,8 +194,8 @@ export class Scheduler {
     if (!v.ok) {
       throw new Error(v.reason ?? 'Security validation failed');
     }
-    if (!options.command && !options.script) {
-      throw new Error('Provide either command or script');
+    if (!options.command && !options.script && !options.subagentConfig) {
+      throw new Error('Provide either command, script, or subagentConfig');
     }
 
     const id = generateId();
@@ -204,6 +209,7 @@ export class Scheduler {
       scriptType: options.scriptType ?? 'javascript',
       model: options.model ?? null,
       reasoningEffort: options.reasoningEffort ?? null,
+      subagentConfig: options.subagentConfig ?? null,
       nextRun: Date.now(),
       logs: [],
     };
@@ -257,8 +263,8 @@ export class Scheduler {
     if (!v.ok) {
       throw new Error(v.reason ?? 'Security validation failed');
     }
-    if (!options.command && !options.script) {
-      throw new Error('Provide either command or script');
+    if (!options.command && !options.script && !options.subagentConfig) {
+      throw new Error('Provide either command, script, or subagentConfig');
     }
 
     const id = generateId();
@@ -269,6 +275,7 @@ export class Scheduler {
       command: options.command ?? null,
       script: options.script ?? null,
       scriptType: options.scriptType ?? 'javascript',
+      subagentConfig: options.subagentConfig ?? null,
       status: 'running',
       startedAt: new Date().toISOString(),
       completedAt: null,
@@ -281,7 +288,11 @@ export class Scheduler {
     saveTasks(this.paths.tasksFile, this.tasks);
 
     const timeoutMs = options.timeoutMs ?? 300000;
-    executeCommand(task, this.paths.scriptsDir, timeoutMs)
+    const execPromise = task.subagentConfig && this.subagentExecutor
+      ? this.subagentExecutor(task.subagentConfig, task.cwd)
+      : executeCommand(task, this.paths.scriptsDir, timeoutMs);
+
+    execPromise
       .then((result) => {
         task.status = result.exitCode === 0 ? 'completed' : 'failed';
         task.completedAt = new Date().toISOString();

@@ -391,6 +391,51 @@ export function getPendingSummaryTool(getScheduler: () => Scheduler) {
 }
 
 // ---------------------------------------------------------------------------
+// create_subagent_automation
+// ---------------------------------------------------------------------------
+
+const CreateSubagentAutomationParams = Type.Object({
+  name: Type.String({ description: 'Automation name' }),
+  intervalMinutes: Type.Number({ description: 'Interval in minutes' }),
+  cwd: Type.Optional(Type.String({ description: 'Working directory' })),
+  agent: Type.Optional(Type.String({ description: 'Agent name: scout | researcher | planner | worker | reviewer | oracle | context-builder' })),
+  task: Type.String({ description: 'Task description for the subagent' }),
+  chain: Type.Optional(Type.String({ description: 'JSON array of {agent, task} steps for a multi-agent chain' })),
+});
+
+export function createSubagentAutomationTool(getScheduler: () => Scheduler) {
+  return {
+    name: 'create_subagent_automation',
+    label: 'Create subagent automation',
+    description: 'Create a recurring automation that runs a pi-subagent (or chain) on a schedule instead of a shell command.',
+    parameters: CreateSubagentAutomationParams,
+    async execute(toolCallId: string, params: any) {
+      let chain: Array<{ agent: string; task: string }> | undefined;
+      if (params.chain) {
+        try {
+          chain = JSON.parse(params.chain);
+        } catch (e) {
+          return {
+            content: [{ type: 'text' as const, text: `Invalid JSON in chain: ${e instanceof Error ? e.message : String(e)}` }],
+            details: {},
+          };
+        }
+      }
+      const automation = getScheduler().createAutomation({
+        name: params.name,
+        intervalMinutes: params.intervalMinutes,
+        cwd: params.cwd,
+        subagentConfig: { agent: params.agent, task: params.task, chain },
+      });
+      return {
+        content: [{ type: 'text' as const, text: `Created subagent automation ${automation.id}` }],
+        details: automation,
+      };
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // set_webhook
 // ---------------------------------------------------------------------------
 

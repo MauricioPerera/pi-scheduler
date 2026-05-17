@@ -4,12 +4,28 @@
 
 export type ScriptType = 'javascript' | 'python' | 'powershell';
 
+// ---------------------------------------------------------------------------
+// Subagent
+// ---------------------------------------------------------------------------
+
+export interface SubagentConfig {
+  agent?: string;
+  task: string;
+  chain?: Array<{ agent: string; task: string }>;
+}
+
+export type SubagentExecutor = (
+  config: SubagentConfig,
+  cwd: string
+) => Promise<{ exitCode: number; stdout: string; stderr: string }>;
+
 export interface SchedulerOptions {
   dataDir?: string;
   tickIntervalMs?: number;
   webhookUrl?: string;
   allowedDirs?: string[];
   logger?: Logger;
+  subagentExecutor?: SubagentExecutor;
 }
 
 export interface Logger {
@@ -32,6 +48,7 @@ export interface Automation {
   scriptType: ScriptType;
   model: string | null;
   reasoningEffort: string | null;
+  subagentConfig: SubagentConfig | null;
   nextRun: number;
   logs: ExecutionLog[];
 }
@@ -45,6 +62,7 @@ export interface CreateAutomationOptions {
   scriptType?: ScriptType;
   model?: string;
   reasoningEffort?: string;
+  subagentConfig?: SubagentConfig;
 }
 
 // ---------------------------------------------------------------------------
@@ -58,6 +76,7 @@ export interface Task {
   command: string | null;
   script: string | null;
   scriptType: ScriptType;
+  subagentConfig: SubagentConfig | null;
   status: 'running' | 'completed' | 'failed';
   startedAt: string;
   completedAt: string | null;
@@ -73,6 +92,7 @@ export interface RunTaskOptions {
   script?: string;
   scriptType?: ScriptType;
   timeoutMs?: number;
+  subagentConfig?: SubagentConfig;
 }
 
 // ---------------------------------------------------------------------------
@@ -117,6 +137,7 @@ export interface Template {
   scriptType: ScriptType | null;
   command: string | null;
   script: string | null;
+  subagentConfig: SubagentConfig | null;
   requiredParams: string[];
 }
 

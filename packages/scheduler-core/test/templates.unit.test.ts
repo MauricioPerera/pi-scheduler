@@ -3,8 +3,8 @@ import { BUILTIN_TEMPLATES, interpolateTemplate, instantiateTemplateOptions } fr
 
 describe('Templates', () => {
   describe('BUILTIN_TEMPLATES', () => {
-    it('has 8 templates', () => {
-      expect(BUILTIN_TEMPLATES).toHaveLength(8);
+    it('has 11 templates', () => {
+      expect(BUILTIN_TEMPLATES).toHaveLength(11);
     });
 
     it('includes build-project', () => {
