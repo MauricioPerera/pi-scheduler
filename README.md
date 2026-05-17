@@ -34,7 +34,7 @@ pi-scheduler/
 |---|---|---|
 | [`pi-scheduler-core`](packages/scheduler-core) | 0.2.5 | Motor puro, zero dependencies |
 | [`pi-scheduler-ext`](packages/scheduler-ext) | 0.2.3 | Extension pi-coding-agent |
-| [`pi-scheduler-daemon`](packages/scheduler-daemon) | 0.2.1 | Daemon standalone |
+| [`pi-scheduler-daemon`](packages/scheduler-daemon) | 0.2.3 | Daemon standalone |
 
 ## Licencia
 
