@@ -1,6 +1,6 @@
 {
   "name": "pi-scheduler-core",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "Motor de scheduling persistente para agentes de IA. Zero dependencies.",
   "type": "module",
   "main": "./dist/index.js",

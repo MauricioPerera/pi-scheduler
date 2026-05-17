@@ -127,6 +127,80 @@ export const BUILTIN_TEMPLATES: Template[] = [
     subagentConfig: { agent: 'oracle', task: 'Audit the codebase for quality issues, architectural drift, dead code, and security concerns. Provide a prioritized list of recommendations.' },
     requiredParams: [],
   },
+  // ---------------------------------------------------------------------------
+  // Playwright templates (require playwright installed in cwd or globally)
+  // ---------------------------------------------------------------------------
+  {
+    id: 'web-screenshot',
+    name: 'Web screenshot',
+    description: 'Navigate to a URL and save a screenshot using a real browser. Requires Playwright in cwd. Param: url (no query strings).',
+    defaultInterval: 60,
+    scriptType: 'javascript',
+    command: null,
+    script: `const { createRequire } = require('node:module');
+const req = createRequire(process.cwd() + '/package.json');
+const { chromium } = req('playwright');
+(async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
+  await page.goto('\${url}');
+  await page.screenshot({ path: 'screenshot.png' });
+  await browser.close();
+  console.log('Screenshot saved to screenshot.png');
+})();`,
+    subagentConfig: null,
+    requiredParams: ['url'],
+  },
+  {
+    id: 'url-health-check',
+    name: 'URL health check',
+    description: 'Check that a URL returns HTTP < 400 using a real browser. Requires Playwright in cwd. Param: url.',
+    defaultInterval: 5,
+    scriptType: 'javascript',
+    command: null,
+    script: `const { createRequire } = require('node:module');
+const req = createRequire(process.cwd() + '/package.json');
+const { chromium } = req('playwright');
+(async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
+  const response = await page.goto('\${url}');
+  await browser.close();
+  const status = response ? response.status() : 0;
+  if (status >= 400 || status === 0) {
+    console.error('Health check failed: HTTP ' + status);
+    process.exit(1);
+  }
+  console.log('Health check passed: HTTP ' + status);
+})();`,
+    subagentConfig: null,
+    requiredParams: ['url'],
+  },
+  {
+    id: 'login-flow',
+    name: 'Login flow check',
+    description: 'Verify a login form is reachable and submittable using a real browser. Requires Playwright in cwd. Param: url. Credentials via PW_USERNAME / PW_PASSWORD env vars.',
+    defaultInterval: 30,
+    scriptType: 'javascript',
+    command: null,
+    script: `const { createRequire } = require('node:module');
+const req = createRequire(process.cwd() + '/package.json');
+const { chromium } = req('playwright');
+(async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
+  await page.goto('\${url}');
+  await page.fill('[name="username"], [name="email"], input[type="email"]', process.env.PW_USERNAME || '');
+  await page.fill('[name="password"], input[type="password"]', process.env.PW_PASSWORD || '');
+  await page.click('[type="submit"]');
+  await page.waitForNavigation({ timeout: 10000 }).catch(() => {});
+  const title = await page.title();
+  console.log('Login flow completed. Page: ' + title);
+  await browser.close();
+})();`,
+    subagentConfig: null,
+    requiredParams: ['url'],
+  },
 ];
 
 // ---------------------------------------------------------------------------

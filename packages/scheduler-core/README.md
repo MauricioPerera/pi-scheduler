@@ -1,6 +1,6 @@
 # pi-scheduler-core
 
-> v0.2.8 — Motor de scheduling persistente para agentes de IA. Zero dependencies (solo Node.js built-ins).
+> v0.2.9 — Motor de scheduling persistente para agentes de IA. Zero dependencies (solo Node.js built-ins).
 
 ## Install
 
@@ -90,7 +90,9 @@ Five layers of validation:
 
 ## Templates
 
-Built-in (11 total): `build-project`, `disk-check`, `git-sync`, `npm-test`, `npm-outdated`, `memory-check`, `service-ping`, `git-log`, `nightly-review`, `daily-research`, `weekly-audit`
+Built-in (14 total): `build-project`, `disk-check`, `git-sync`, `npm-test`, `npm-outdated`, `memory-check`, `service-ping`, `git-log`, `nightly-review`, `daily-research`, `weekly-audit`, `web-screenshot`, `url-health-check`, `login-flow`
+
+The last three are Playwright templates — they require `playwright` installed in the automation's `cwd`.
 
 The last three are subagent templates — they require a `subagentExecutor` to be configured.
 

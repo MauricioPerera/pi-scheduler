@@ -3,8 +3,8 @@ import { BUILTIN_TEMPLATES, interpolateTemplate, instantiateTemplateOptions } fr
 
 describe('Templates', () => {
   describe('BUILTIN_TEMPLATES', () => {
-    it('has 11 templates', () => {
-      expect(BUILTIN_TEMPLATES).toHaveLength(11);
+    it('has 14 templates', () => {
+      expect(BUILTIN_TEMPLATES).toHaveLength(14);
     });
 
     it('includes build-project', () => {
@@ -68,6 +68,47 @@ describe('Templates', () => {
       expect(t!.command).toBe('git log --oneline -10');
       expect(t!.defaultInterval).toBe(60);
       expect(t!.requiredParams).toHaveLength(0);
+    });
+
+    it('includes web-screenshot with url param', () => {
+      const t = BUILTIN_TEMPLATES.find((x) => x.id === 'web-screenshot');
+      expect(t).toBeDefined();
+      expect(t!.scriptType).toBe('javascript');
+      expect(t!.script).toContain('playwright');
+      expect(t!.script).toContain('screenshot');
+      expect(t!.requiredParams).toEqual(['url']);
+    });
+
+    it('includes url-health-check with url param', () => {
+      const t = BUILTIN_TEMPLATES.find((x) => x.id === 'url-health-check');
+      expect(t).toBeDefined();
+      expect(t!.scriptType).toBe('javascript');
+      expect(t!.script).toContain('playwright');
+      expect(t!.script).toContain('process.exit');
+      expect(t!.requiredParams).toEqual(['url']);
+    });
+
+    it('includes login-flow with url param', () => {
+      const t = BUILTIN_TEMPLATES.find((x) => x.id === 'login-flow');
+      expect(t).toBeDefined();
+      expect(t!.scriptType).toBe('javascript');
+      expect(t!.script).toContain('playwright');
+      expect(t!.script).toContain('PW_USERNAME');
+      expect(t!.requiredParams).toEqual(['url']);
+    });
+
+    it('web-screenshot interpolates url into script', () => {
+      const t = BUILTIN_TEMPLATES.find((x) => x.id === 'web-screenshot')!;
+      const result = interpolateTemplate(t, { url: 'https://example.com' });
+      expect(result.missing).toHaveLength(0);
+      expect(result.errors).toHaveLength(0);
+      expect(result.script).toContain('https://example.com');
+    });
+
+    it('url-health-check reports missing url param', () => {
+      const t = BUILTIN_TEMPLATES.find((x) => x.id === 'url-health-check')!;
+      const result = interpolateTemplate(t, {});
+      expect(result.missing).toEqual(['url']);
     });
 
     it('service-ping interpolates host and port', () => {
