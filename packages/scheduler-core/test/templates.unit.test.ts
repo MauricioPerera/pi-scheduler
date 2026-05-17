@@ -3,8 +3,8 @@ import { BUILTIN_TEMPLATES, interpolateTemplate, instantiateTemplateOptions } fr
 
 describe('Templates', () => {
   describe('BUILTIN_TEMPLATES', () => {
-    it('has 3 templates', () => {
-      expect(BUILTIN_TEMPLATES).toHaveLength(3);
+    it('has 8 templates', () => {
+      expect(BUILTIN_TEMPLATES).toHaveLength(8);
     });
 
     it('includes build-project', () => {
@@ -26,6 +26,63 @@ describe('Templates', () => {
       expect(t).toBeDefined();
       expect(t!.command).toBe('git pull');
       expect(t!.defaultInterval).toBe(30);
+    });
+
+    it('includes npm-test', () => {
+      const t = BUILTIN_TEMPLATES.find((x) => x.id === 'npm-test');
+      expect(t).toBeDefined();
+      expect(t!.command).toBe('npm test');
+      expect(t!.defaultInterval).toBe(30);
+      expect(t!.requiredParams).toHaveLength(0);
+    });
+
+    it('includes npm-outdated', () => {
+      const t = BUILTIN_TEMPLATES.find((x) => x.id === 'npm-outdated');
+      expect(t).toBeDefined();
+      expect(t!.command).toBe('npm outdated');
+      expect(t!.defaultInterval).toBe(1440);
+      expect(t!.requiredParams).toHaveLength(0);
+    });
+
+    it('includes memory-check', () => {
+      const t = BUILTIN_TEMPLATES.find((x) => x.id === 'memory-check');
+      expect(t).toBeDefined();
+      expect(t!.command).toContain('Get-Process');
+      expect(t!.defaultInterval).toBe(15);
+      expect(t!.requiredParams).toHaveLength(0);
+    });
+
+    it('includes service-ping with required params', () => {
+      const t = BUILTIN_TEMPLATES.find((x) => x.id === 'service-ping');
+      expect(t).toBeDefined();
+      expect(t!.command).toContain('Test-NetConnection');
+      expect(t!.command).toContain('${host}');
+      expect(t!.command).toContain('${port}');
+      expect(t!.defaultInterval).toBe(5);
+      expect(t!.requiredParams).toEqual(['host', 'port']);
+    });
+
+    it('includes git-log', () => {
+      const t = BUILTIN_TEMPLATES.find((x) => x.id === 'git-log');
+      expect(t).toBeDefined();
+      expect(t!.command).toBe('git log --oneline -10');
+      expect(t!.defaultInterval).toBe(60);
+      expect(t!.requiredParams).toHaveLength(0);
+    });
+
+    it('service-ping interpolates host and port', () => {
+      const t = BUILTIN_TEMPLATES.find((x) => x.id === 'service-ping')!;
+      const result = interpolateTemplate(t, { host: 'localhost', port: '3000' });
+      expect(result.missing).toHaveLength(0);
+      expect(result.errors).toHaveLength(0);
+      expect(result.command).toContain('localhost');
+      expect(result.command).toContain('3000');
+    });
+
+    it('service-ping reports missing params', () => {
+      const t = BUILTIN_TEMPLATES.find((x) => x.id === 'service-ping')!;
+      const result = interpolateTemplate(t, {});
+      expect(result.missing).toEqual(['host', 'port']);
     });
   });
 
