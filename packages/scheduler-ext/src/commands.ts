@@ -2,6 +2,22 @@ import type { Scheduler } from 'pi-scheduler-core';
 import type { ExtensionCommandContext } from '@earendil-works/pi-coding-agent';
 
 // ---------------------------------------------------------------------------
+// UI helpers
+// ---------------------------------------------------------------------------
+
+async function notify(
+  ctx: ExtensionCommandContext,
+  message: string,
+  level: 'info' | 'warning' | 'error' = 'info',
+): Promise<void> {
+  if (ctx.ui?.notify) {
+    await ctx.ui.notify(message, level);
+  } else {
+    console.log(`[scheduler/${level}] ${message}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Slash Commands
 // ---------------------------------------------------------------------------
 
@@ -33,7 +49,7 @@ export function schedulerCommandHandler(getScheduler: () => Scheduler) {
         await handleAck(getScheduler(), ctx);
         break;
       default:
-        await ctx.ui?.notify?.(`Unknown command: /scheduler ${subcommand}`, 'warning');
+        await notify(ctx, `Unknown command: /scheduler ${subcommand}`, 'warning');
     }
   };
 }
@@ -41,7 +57,7 @@ export function schedulerCommandHandler(getScheduler: () => Scheduler) {
 async function handleList(scheduler: Scheduler, ctx: ExtensionCommandContext): Promise<void> {
   const automations = scheduler.listAutomations();
   if (automations.length === 0) {
-    await ctx.ui?.notify?.('No automations scheduled', 'info');
+    await notify(ctx, 'No automations scheduled');
     return;
   }
 
@@ -56,13 +72,13 @@ async function handleList(scheduler: Scheduler, ctx: ExtensionCommandContext): P
     lines.push(`${a.name.padEnd(14)}| ${String(a.intervalMinutes).padEnd(9)}| in ${nextStr.padEnd(13)}| ${lastStatus}`);
   }
 
-  await ctx.ui?.notify?.(lines.join('\n'), 'info');
+  await notify(ctx, lines.join('\n'));
 }
 
 async function handleTasks(scheduler: Scheduler, ctx: ExtensionCommandContext): Promise<void> {
   const tasks = scheduler.listTasks().reverse();
   if (tasks.length === 0) {
-    await ctx.ui?.notify?.('No one-shot tasks', 'info');
+    await notify(ctx, 'No one-shot tasks');
     return;
   }
 
@@ -76,23 +92,23 @@ async function handleTasks(scheduler: Scheduler, ctx: ExtensionCommandContext): 
     lines.push(`${t.name.padEnd(14)}| ${status}| ${started} | ${exit}`);
   }
 
-  await ctx.ui?.notify?.(lines.join('\n'), 'info');
+  await notify(ctx, lines.join('\n'));
 }
 
 async function handleDelete(scheduler: Scheduler, ctx: ExtensionCommandContext, id?: string): Promise<void> {
   if (!id) {
-    await ctx.ui?.notify?.('Usage: /scheduler delete <id>', 'warning');
+    await notify(ctx, 'Usage: /scheduler delete <id>', 'warning');
     return;
   }
 
   const confirmed = await ctx.ui?.confirm?.('Delete automation/task', `Delete ${id}?`, { timeout: 10000 });
   if (!confirmed) {
-    await ctx.ui?.notify?.('Cancelled', 'info');
+    await notify(ctx, 'Cancelled');
     return;
   }
 
   const deleted = scheduler.deleteAutomation(id) || scheduler.deleteTask(id);
-  await ctx.ui?.notify?.(deleted ? `Deleted ${id}` : `Not found: ${id}`, deleted ? 'info' : 'warning');
+  await notify(ctx, deleted ? `Deleted ${id}` : `Not found: ${id}`, deleted ? 'info' : 'warning');
 }
 
 async function handleLogs(
@@ -102,13 +118,13 @@ async function handleLogs(
   limit?: number
 ): Promise<void> {
   if (!id) {
-    await ctx.ui?.notify?.('Usage: /scheduler logs <id> [limit]', 'warning');
+    await notify(ctx, 'Usage: /scheduler logs <id> [limit]', 'warning');
     return;
   }
 
   const logs = scheduler.getAutomationLogs(id, limit ?? 10);
   if (logs.length === 0) {
-    await ctx.ui?.notify?.('No logs found', 'info');
+    await notify(ctx, 'No logs found');
     return;
   }
 
@@ -120,19 +136,19 @@ async function handleLogs(
     lines.push('');
   }
 
-  await ctx.ui?.notify?.(lines.join('\n'), 'info');
+  await notify(ctx, lines.join('\n'));
 }
 
 async function handleTemplates(scheduler: Scheduler, ctx: ExtensionCommandContext): Promise<void> {
   const templates = scheduler.listTemplates();
   const lines = templates.map((t) => `${t.id}: ${t.description} (default: ${t.defaultInterval}min)`);
-  await ctx.ui?.notify?.(lines.join('\n') || 'No templates', 'info');
+  await notify(ctx, lines.join('\n') || 'No templates');
 }
 
 async function handleNotifications(scheduler: Scheduler, ctx: ExtensionCommandContext): Promise<void> {
   const summary = scheduler.getPendingSummary();
   if (summary.count === 0) {
-    await ctx.ui?.notify?.('No pending notifications', 'info');
+    await notify(ctx, 'No pending notifications');
     return;
   }
 
@@ -140,11 +156,11 @@ async function handleNotifications(scheduler: Scheduler, ctx: ExtensionCommandCo
   for (const [name, count] of Object.entries(summary.byAutomation)) {
     lines.push(`  ${name}: ${count}`);
   }
-  await ctx.ui?.notify?.(lines.join('\n'), 'info');
+  await notify(ctx, lines.join('\n'));
 }
 
 async function handleAck(scheduler: Scheduler, ctx: ExtensionCommandContext): Promise<void> {
   scheduler.ackNotifications(Date.now());
-  await ctx.ui?.notify?.('All notifications acknowledged', 'info');
+  await notify(ctx, 'All notifications acknowledged');
 }
 
